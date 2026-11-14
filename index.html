@@ -1,0 +1,229 @@
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>JK TRADES | UK Trades Marketplace</title>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<style>
+:root{--navy:#101d35;--gold:#d5ad52;--light:#f4f6fa}
+*{box-sizing:border-box}
+body{margin:0;background:var(--light);font-family:Arial,sans-serif;color:#182238}
+header{background:var(--navy);color:white;padding:24px 16px;text-align:center}
+header h1{margin:0;color:var(--gold);letter-spacing:3px}
+header p{margin:8px 0 0}
+main{max-width:650px;margin:25px auto;padding:0 14px}
+.card{background:white;padding:22px;border-radius:12px;margin-bottom:18px;box-shadow:0 3px 14px #0000000d}
+h2{margin-top:0;color:var(--navy)}
+input,textarea,select,button{width:100%;padding:13px;margin:7px 0;border-radius:7px;font-size:16px}
+input,textarea,select{border:1px solid #ccd2dc}
+button{background:var(--navy);color:white;border:0;font-weight:bold;cursor:pointer}
+button.gold{background:var(--gold);color:var(--navy)}
+button.secondary{background:#e8edf5;color:var(--navy)}
+.hidden{display:none}
+.small{font-size:13px;color:#687386}
+.item{border:1px solid #dce1e9;padding:13px;border-radius:8px;margin:10px 0}
+.status{font-weight:bold;color:#8a6415}
+</style>
+</head>
+<body>
+<header>
+<h1>JK TRADES</h1>
+<p>Trusted trades. Local jobs. Nationwide service.</p>
+</header>
+<main>
+<section class="card" id="welcome">
+<h2>Welcome to JK TRADES</h2>
+<p>Find reliable tradespeople or connect with customers looking for your services.</p>
+<button class="gold" onclick="show('register')">Create an account</button>
+<button class="secondary" onclick="show('login')">Log in</button>
+</section>
+
+<section class="card hidden" id="register">
+<h2>Create your account</h2>
+<input id="regName" placeholder="Your full name">
+<input id="regEmail" type="email" placeholder="Email address">
+<input id="regPassword" type="password" placeholder="Create password">
+<select id="regType">
+<option value="customer">Customer</option>
+<option value="tradesperson">Tradesperson</option>
+</select>
+<button onclick="register()">Register</button>
+<button class="secondary" onclick="show('welcome')">Back</button>
+<p class="small">You'll need to confirm your email before signing in.</p>
+</section>
+
+<section class="card hidden" id="login">
+<h2>Log in</h2>
+<input id="loginEmail" type="email" placeholder="Email address">
+<input id="loginPassword" type="password" placeholder="Password">
+<button onclick="login()">Log in</button>
+<button class="secondary" onclick="show('welcome')">Back</button>
+</section>
+
+<section class="card hidden" id="account">
+<h2 id="accountTitle">Your account</h2>
+<p id="accountInfo"></p>
+<button class="secondary" onclick="logout()">Log out</button>
+</section>
+
+<section class="card hidden" id="customer">
+<h2>Post a job for free</h2>
+<input id="jobTitle" placeholder="What work do you need doing?">
+<select id="jobTrade">
+<option>Plumbing</option><option>Electrical</option>
+<option>Heating</option><option>Roofing</option>
+<option>Carpentry</option><option>Painting and decorating</option>
+<option>Handyman</option><option>Other</option>
+</select>
+<textarea id="jobDescription" placeholder="Describe the job"></textarea>
+<input id="jobPostcode" placeholder="Job postcode">
+<button class="gold" onclick="postJob()">Post job</button>
+<h2>Your jobs</h2>
+<div id="myJobs"></div>
+</section>
+
+<section class="card hidden" id="trades">
+<h2>Tradesperson application</h2>
+<input id="businessName" placeholder="Business name">
+<input id="tradeName" placeholder="Your trade">
+<input id="tradePostcode" placeholder="Your postcode">
+<input id="tradePhone" placeholder="Contact telephone">
+<button class="gold" onclick="applyTrade()">Submit application</button>
+<p class="small">Applications must be approved by JK TRADES before you can access open jobs.</p>
+<h2>Available jobs</h2>
+<div id="openJobs"></div>
+</section>
+
+<section class="card hidden" id="admin">
+<h2>JK TRADES Admin</h2>
+<p>Private administration area</p>
+<h3>Tradesperson applications</h3>
+<div id="applications"></div>
+<h3>Customer jobs</h3>
+<div id="allJobs"></div>
+</section>
+<p id="message" role="status"></p>
+</main>
+<script>
+const SUPABASE_URL = "https://zrloxobjeetxtjpevthc.supabase.co";
+const SUPABASE_KEY = "sb_publishable_OvPRFg4iqg39SMWlNnGmVg_kyP0zh3j";
+const db = window.supabase.createClient(SUPABASE_URL,SUPABASE_KEY);
+let currentUser = null;
+
+function msg(t){document.getElementById("message").textContent=t}
+function show(id){
+["welcome","register","login","account","customer","trades","admin"]
+.forEach(x=>document.getElementById(x).classList.add("hidden"));
+document.getElementById(id).classList.remove("hidden");
+}
+async function register(){
+const name=regName.value.trim(),email=regEmail.value.trim(),
+password=regPassword.value,type=regType.value;
+if(!name||!email||!password){msg("Please complete all fields.");return}
+const {error}=await db.auth.signUp({
+email,password,options:{data:{full_name:name,account_type:type}}
+});
+msg(error?error.message:"Registration submitted. Check your email to confirm your account.");
+}
+async function login(){
+const {data,error}=await db.auth.signInWithPassword({
+email:loginEmail.value.trim(),password:loginPassword.value
+});
+if(error){msg(error.message);return}
+await loadAccount(data.user);
+}
+async function logout(){
+await db.auth.signOut();currentUser=null;show("welcome");msg("You have logged out.");
+}
+async function loadAccount(user){
+currentUser=user;
+show("account");
+accountTitle.textContent="Welcome to JK TRADES";
+accountInfo.textContent=user.email;
+const {data:admin}=await db.from("admin_users").select("user_id").eq("user_id",user.id).maybeSingle();
+if(admin){show("admin");await loadAdmin();return}
+const {data:app}=await db.from("trade_applications").select("status").eq("user_id",user.id).maybeSingle();
+const type=user.user_metadata?.account_type;
+if(app || type==="tradesperson"){
+show("trades");
+msg(app?"Your application status: "+app.status:"Complete your tradesperson application below.");
+await loadOpenJobs();
+}else{
+show("customer");await loadMyJobs();
+}
+}
+async function postJob(){
+if(!currentUser)return;
+const {error}=await db.from("jobs").insert({
+customer_id:currentUser.id,title:jobTitle.value.trim(),
+description:jobDescription.value.trim(),trade:jobTrade.value,
+postcode:jobPostcode.value.trim()
+});
+if(error){msg(error.message);return}
+msg("Your job has been posted.");
+jobTitle.value="";jobDescription.value="";jobPostcode.value="";
+await loadMyJobs();
+}
+async function loadMyJobs(){
+const {data,error}=await db.from("jobs").select("*").eq("customer_id",currentUser.id).order("created_at",{ascending:false});
+myJobs.innerHTML="";
+if(error){myJobs.textContent=error.message;return}
+(data||[]).forEach(j=>myJobs.append(makeItem(j.title,j.trade+" · "+j.postcode+" · "+j.status)));
+}
+async function applyTrade(){
+const {error}=await db.from("trade_applications").insert({
+user_id:currentUser.id,business_name:businessName.value.trim(),
+trade:tradeName.value.trim(),postcode:tradePostcode.value.trim(),
+phone:tradePhone.value.trim(),status:"pending"
+});
+msg(error?error.message:"Application submitted. It is awaiting admin approval.");
+if(!error)await loadAccount(currentUser);
+}
+async function loadOpenJobs(){
+const {data,error}=await db.from("jobs").select("*").eq("status","open").order("created_at",{ascending:false});
+openJobs.innerHTML="";
+if(error){openJobs.textContent=error.message;return}
+(data||[]).forEach(j=>openJobs.append(makeItem(j.title,j.trade+" · "+j.postcode+" · "+j.description)));
+}
+function makeItem(title,detail){
+const d=document.createElement("div");d.className="item";
+const h=document.createElement("strong");h.textContent=title;
+const p=document.createElement("p");p.textContent=detail;
+d.append(h,p);return d;
+}
+async function loadAdmin(){
+const {data:apps,error}=await db.from("trade_applications").select("*").order("created_at",{ascending:false});
+applications.innerHTML="";
+if(error){applications.textContent=error.message;return}
+(apps||[]).forEach(a=>{
+const d=makeItem(a.business_name,a.trade+" · "+a.postcode+" · "+a.status);
+if(a.status==="pending"){
+["approved","rejected"].forEach(status=>{
+const b=document.createElement("button");b.textContent=status;
+b.onclick=()=>updateApplication(a.id,status);d.append(b);
+});
+}
+applications.append(d);
+});
+const {data:jobs,error:jobError}=await db.from("jobs").select("*").order("created_at",{ascending:false});
+allJobs.innerHTML="";
+if(jobError){allJobs.textContent=jobError.message;return}
+(jobs||[]).forEach(j=>allJobs.append(makeItem(j.title,j.trade+" · "+j.postcode+" · "+j.status)));
+}
+async function updateApplication(id,status){
+const {error}=await db.from("trade_applications").update({status}).eq("id",id);
+msg(error?error.message:"Application "+status+".");
+if(!error)await loadAdmin();
+}
+db.auth.onAuthStateChange((event,session)=>{
+if(event==="SIGNED_IN"&&session?.user)loadAccount(session.user);
+});
+(async()=>{
+const {data}=await db.auth.getSession();
+if(data.session)await loadAccount(data.session.user);
+})();
+</script>
+</body>
+</html>
