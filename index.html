@@ -18,6 +18,7 @@
 body{margin:0;background:var(--light);font-family:Inter,system-ui,-apple-system,Segoe UI,sans-serif;color:var(--ink)}
 button,input,textarea,select{font:inherit}
 button{transition:transform .15s,background .15s}
+.job-photo-gallery{display:flex;flex-wrap:wrap;gap:10px;margin:12px 0}.job-photo-gallery figure{margin:0;width:112px}.job-photo-gallery a{display:block}.job-photo-gallery img{display:block;width:112px;height:88px;object-fit:cover;border-radius:10px;border:1px solid var(--line);background:#eef1f5}.job-photo-gallery figcaption{font-size:11px;color:var(--muted);margin-top:4px;overflow-wrap:anywhere}
 button:active{transform:scale(.985)}
 button:focus-visible,a:focus-visible,input:focus-visible,textarea:focus-visible,select:focus-visible{outline:3px solid #d5ad5280;outline-offset:2px}
 
@@ -331,6 +332,26 @@ function navigate(page){
   if(page==="trades" && currentUser) loadTradePage();
   if(page==="settings") document.getElementById("settingsEmail").textContent=currentUser?.email||"";
 }
+async function appendJobPhotoGallery(card,jobId){
+ const {data:photos,error}=await db.from("job_photos")
+  .select("id,storage_path,caption,created_at").eq("job_id",jobId).order("created_at",{ascending:true});
+ if(error||!photos?.length)return;
+ const gallery=document.createElement("div");gallery.className="job-photo-gallery";
+ for(const photo of photos){
+  const {data:signed,error:signedError}=await db.storage.from("job-photos").createSignedUrl(photo.storage_path,3600);
+  if(signedError||!signed?.signedUrl)continue;
+  const figure=document.createElement("figure");
+  const link=document.createElement("a");link.href=signed.signedUrl;link.target="_blank";link.rel="noopener noreferrer";link.setAttribute("aria-label","Open job photo");
+  const image=document.createElement("img");image.src=signed.signedUrl;image.alt=photo.caption||"Job photo";image.loading="lazy";image.decoding="async";
+  link.append(image);figure.append(link);
+  if(photo.caption){const caption=document.createElement("figcaption");caption.textContent=photo.caption;figure.append(caption)}
+  gallery.append(figure);
+ }
+ if(gallery.childElementCount){
+  const heading=document.createElement("h3");heading.textContent="Job photos ("+gallery.childElementCount+")";
+  card.append(heading,gallery);
+ }
+}
 function filterOpenJobs(){
  const q=(document.getElementById("jobSearch").value||"").trim().toLowerCase();
  const results=openJobCache.filter(j=>[j.title,j.trade,j.postcode,j.description].some(v=>(v||"").toLowerCase().includes(q)));
@@ -342,6 +363,7 @@ function renderJobList(target,rows){
  rows.forEach(j=>{
   const card=makeItem(j.title,(j.trade||"Trade")+" · "+(j.postcode||"Location not provided")+" · "+(j.status||"open"));
   const desc=document.createElement("p");desc.textContent=j.description||"";card.append(desc);
+  void appendJobPhotoGallery(card,j.id);
   if(target==="findWorkResults" && currentDashboard==="trades" && currentTradeStatus==="approved"){
    const form=document.createElement("div");form.className="quote-form";
    const amount=document.createElement("input");amount.type="number";amount.min="0.01";amount.step="0.01";amount.placeholder="Your quote amount (£)";amount.id="quote-amount-"+j.id;
@@ -391,6 +413,7 @@ function renderCustomerJobCards(host,jobs,quotes){
  jobs.forEach(job=>{
   const card=makeItem(job.title,(job.trade||"Trade")+" · "+(job.postcode||"Location not provided")+" · "+(job.status||"open"));
   const desc=document.createElement("p");desc.textContent=job.description||"";card.append(desc);
+  void appendJobPhotoGallery(card,job.id);
   const jobQuotes=quotes.filter(q=>q.job_id===job.id);
   const heading=document.createElement("h3");heading.textContent="Quotes received ("+jobQuotes.length+")";card.append(heading);
   if(!jobQuotes.length){const empty=document.createElement("p");empty.textContent="No quotes yet. Approved tradespeople can send offers for this job.";card.append(empty)}
