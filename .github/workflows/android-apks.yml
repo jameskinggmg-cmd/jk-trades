@@ -5,7 +5,7 @@ on:
     paths:
       - "index.html"
       - "package.json"
-      - "capacitor.config.cjs"
+      - "capacitor.config.js"
       - ".github/workflows/android-apks.yml"
   workflow_dispatch:
 permissions:
