@@ -378,14 +378,13 @@ const {data:app}=await db.from("trade_applications").select("status").eq("user_i
 const type=user.user_metadata?.account_type;
 if(app || type==="tradesperson"){
   currentDashboard="trades";
-  show("trades");
   msg(app?"Your application status: "+app.status:"Complete your tradesperson application below.");
-  await loadOpenJobs();
-}else{
-  currentDashboard="customer";
-  await loadMyJobs();
+  navigate("trades");
+  return;
 }
- navigate("home");
+currentDashboard="customer";
+await loadMyJobs();
+navigate("home");
 }
 async function postJob(){
 if(!currentUser)return;
