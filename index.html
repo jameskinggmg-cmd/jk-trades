@@ -65,7 +65,7 @@ main{max-width:1180px;margin:26px auto;padding:0 18px}
   main{margin:16px auto;padding:0 12px 86px}
   .app-layout{display:block}
   .side-nav{display:none!important}
-  .mobile-nav:not(.hidden){display:grid;grid-template-columns:repeat(5,minmax(0,1fr));gap:2px;position:fixed;z-index:20;left:0;right:0;bottom:0;padding:7px max(6px,env(safe-area-inset-right)) calc(7px + env(safe-area-inset-bottom)) max(6px,env(safe-area-inset-left));background:#fff;border-top:1px solid var(--line);box-shadow:0 -5px 20px #101d3512}
+  .mobile-nav:not(.hidden){display:grid;grid-template-columns:repeat(6,minmax(0,1fr));gap:2px;position:fixed;z-index:20;left:0;right:0;bottom:0;padding:7px max(6px,env(safe-area-inset-right)) calc(7px + env(safe-area-inset-bottom)) max(6px,env(safe-area-inset-left));background:#fff;border-top:1px solid var(--line);box-shadow:0 -5px 20px #101d3512}
   .mobile-nav .nav-link{display:flex;flex-direction:column;justify-content:center;align-items:center;gap:3px;padding:7px 2px;margin:0;font-size:10px;white-space:nowrap}
   .mobile-nav .nav-icon{font-size:17px;width:auto}
   .page-heading{flex-direction:column}
@@ -261,6 +261,7 @@ button.secondary{background:#e8edf5;color:var(--navy)}
   <button class="nav-link" data-page="postjob" onclick="navigate('postjob')"><span class="nav-icon">＋</span>Post job</button>
   <button class="nav-link" data-page="messages" onclick="navigate('messages')"><span class="nav-icon">✉</span>Messages</button>
   <button class="nav-link" data-page="profile" onclick="navigate('profile')"><span class="nav-icon">◉</span>Profile</button>
+  <button class="nav-link" data-page="trades" onclick="navigate('trades')"><span class="nav-icon">⚒</span>Trade</button>
 </nav>
 </main>
 <script>
