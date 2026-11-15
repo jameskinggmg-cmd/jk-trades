@@ -303,9 +303,27 @@ button.secondary{background:#e8edf5;color:var(--navy)}
 <h3>Tradesperson applications</h3>
 <div id="applications"></div>
 <h3>Qualification verification queue</h3><div id="credentialReviewQueue"></div>
-<h3>Customer jobs</h3>
+<h3>Active customer jobs</h3>
 <div id="allJobs"></div>
+<h3>Cancelled jobs</h3>
+<p class="small">Review the original advert, see who posted it, edit the details, or put it back live.</p>
+<div id="cancelledJobs"></div>
 </section>
+<div id="adminJobModal" class="job-modal-backdrop hidden" role="dialog" aria-modal="true" aria-labelledby="adminJobModalTitle">
+ <section class="job-modal">
+  <div class="job-modal-head"><h2 id="adminJobModalTitle">Cancelled job details</h2><button class="secondary job-modal-close" type="button" onclick="closeAdminJobModal()">Close ✕</button></div>
+  <div id="adminJobCustomer" class="item"></div>
+  <label for="adminJobTitle">Job title</label><input id="adminJobTitle" maxlength="160">
+  <label for="adminJobTrade">Trade</label><input id="adminJobTrade" maxlength="100">
+  <label for="adminJobService">Specialist service</label><input id="adminJobService" maxlength="120">
+  <label for="adminJobPostcode">Postcode</label><input id="adminJobPostcode" maxlength="20">
+  <label for="adminJobDescription">Job description</label><textarea id="adminJobDescription" rows="5" maxlength="5000"></textarea>
+  <div class="job-modal-actions">
+   <button type="button" class="secondary" onclick="saveAdminJob(false)">Save edits</button>
+   <button type="button" class="gold" onclick="saveAdminJob(true)">Save & put live</button>
+  </div>
+ </section>
+</div>
 <div id="customerJobModal" class="job-modal-backdrop hidden" role="dialog" aria-modal="true" aria-labelledby="jobModalTitle" onclick="if(event.target===this)closeCustomerJobModal()"><section class="job-modal"><div class="job-modal-head"><h2 id="jobModalTitle">Job details</h2><button class="secondary job-modal-close" type="button" onclick="closeCustomerJobModal()">Close ✕</button></div><div id="jobModalBody"></div></section></div>
 <p id="message" role="status" aria-live="polite"></p>
 </div>
@@ -1089,25 +1107,79 @@ async function loadCredentialReviewQueue(){
  if(!data?.length)host.textContent="No credentials submitted for review.";
 }
 
+let editingAdminJobId = null;
+
 async function loadAdmin(){
-await loadCredentialReviewQueue();
-const {data:apps,error}=await db.from("trade_applications").select("*").order("created_at",{ascending:false});
-applications.innerHTML="";
-if(error){applications.textContent=error.message;return}
-(apps||[]).forEach(a=>{
-const d=makeItem(a.business_name,a.trade+" — "+((a.services&&a.services.length)?a.services.join(", "):(a.service||"Specialist services not listed"))+" · "+a.postcode+" · "+a.status);
-if(a.status==="pending"){
-["approved","rejected"].forEach(status=>{
-const b=document.createElement("button");b.textContent=status;
-b.onclick=()=>updateApplication(a.id,status);d.append(b);
-});
+ await loadCredentialReviewQueue();
+ const {data:apps,error}=await db.from("trade_applications").select("*").order("created_at",{ascending:false});
+ applications.innerHTML="";
+ if(error){applications.textContent=error.message;return}
+ (apps||[]).forEach(a=>{
+  const d=makeItem(a.business_name,a.trade+" — "+((a.services&&a.services.length)?a.services.join(", "):(a.service||"Specialist services not listed"))+" · "+a.postcode+" · "+a.status);
+  if(a.status==="pending"){
+   ["approved","rejected"].forEach(status=>{
+    const b=document.createElement("button");b.textContent=status;
+    b.onclick=()=>updateApplication(a.id,status);d.append(b);
+   });
+  }
+  applications.append(d);
+ });
+ const {data:jobs,error:jobError}=await db.from("jobs").select("*").neq("status","cancelled").order("created_at",{ascending:false});
+ allJobs.innerHTML="";
+ if(jobError){allJobs.textContent=jobError.message;return}
+ (jobs||[]).forEach(j=>allJobs.append(makeItem(j.title,j.trade+" · "+j.postcode+" · "+j.status)));
+ await loadCancelledAdminJobs();
 }
-applications.append(d);
-});
-const {data:jobs,error:jobError}=await db.from("jobs").select("*").order("created_at",{ascending:false});
-allJobs.innerHTML="";
-if(jobError){allJobs.textContent=jobError.message;return}
-(jobs||[]).forEach(j=>allJobs.append(makeItem(j.title,j.trade+" · "+j.postcode+" · "+j.status)));
+
+async function loadCancelledAdminJobs(){
+ const host=document.getElementById("cancelledJobs");
+ host.innerHTML="<p class='small'>Loading cancelled jobs…</p>";
+ const {data,error}=await db.rpc("admin_list_cancelled_jobs");
+ host.innerHTML="";
+ if(error){host.textContent="Could not load cancelled jobs: "+error.message;return}
+ if(!data?.length){host.textContent="There are no cancelled jobs.";return}
+ data.forEach(j=>{
+  const card=document.createElement("article");card.className="item";
+  const heading=document.createElement("strong");heading.textContent=j.title||"Untitled job";card.append(heading);
+  const summary=document.createElement("p");summary.textContent=[j.trade,j.service,j.postcode,"Cancelled · "+new Date(j.created_at).toLocaleString("en-GB")].filter(Boolean).join(" · ");card.append(summary);
+  const who=document.createElement("p");who.textContent="Posted by: "+(j.customer_name||"Name not supplied")+" · "+(j.customer_email||"Email unavailable");card.append(who);
+  const description=document.createElement("p");description.textContent=j.description||"No description supplied";card.append(description);
+  const edit=document.createElement("button");edit.type="button";edit.className="secondary";edit.textContent="View & edit";edit.onclick=()=>openAdminJobEditor(j);card.append(edit);
+  host.append(card);
+ });
+}
+
+function openAdminJobEditor(job){
+ editingAdminJobId=job.job_id;
+ document.getElementById("adminJobTitle").value=job.title||"";
+ document.getElementById("adminJobTrade").value=job.trade||"";
+ document.getElementById("adminJobService").value=job.service||"";
+ document.getElementById("adminJobPostcode").value=job.postcode||"";
+ document.getElementById("adminJobDescription").value=job.description||"";
+ const who=document.getElementById("adminJobCustomer");
+ who.textContent="Posted by: "+(job.customer_name||"Name not supplied")+" · "+(job.customer_email||"Email unavailable")+" · Customer ID: "+job.customer_id;
+ document.getElementById("adminJobModal").classList.remove("hidden");
+}
+function closeAdminJobModal(){
+ document.getElementById("adminJobModal").classList.add("hidden");
+ editingAdminJobId=null;
+}
+async function saveAdminJob(reactivate){
+ if(!editingAdminJobId)return;
+ const values={
+  title:document.getElementById("adminJobTitle").value.trim(),
+  trade:document.getElementById("adminJobTrade").value.trim(),
+  service:document.getElementById("adminJobService").value.trim(),
+  postcode:document.getElementById("adminJobPostcode").value.trim().toUpperCase(),
+  description:document.getElementById("adminJobDescription").value.trim()
+ };
+ if(!values.title||!values.trade||!values.description){msg("Please enter a job title, trade and description.");return}
+ if(reactivate)values.status="open";
+ const {error}=await db.from("jobs").update(values).eq("id",editingAdminJobId).eq("status","cancelled");
+ if(error){msg("The job could not be updated: "+error.message);return}
+ msg(reactivate?"Job updated and put back live for tradespeople.":"Cancelled job details updated.");
+ closeAdminJobModal();
+ await loadAdmin();
 }
 async function updateApplication(id,status){
 const {error}=await db.from("trade_applications").update({status}).eq("id",id);
