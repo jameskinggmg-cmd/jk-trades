@@ -190,6 +190,8 @@ button.secondary{background:#e8edf5;color:var(--navy)}
   <select id="newJobTrade"><option>Plumbing</option><option>Electrical</option><option>Heating</option><option>Roofing</option><option>Carpentry</option><option>Painting and decorating</option><option>Handyman</option><option>Other</option></select>
   <textarea id="newJobDescription" rows="4" placeholder="Describe the work, any problems and when you need it done"></textarea>
   <input id="newJobPostcode" placeholder="Job postcode">
+  <label class="small" for="newJobPhotos">Add job photos (up to 5 images, 10 MB each)</label>
+  <input id="newJobPhotos" type="file" accept="image/jpeg,image/png,image/webp" multiple>
   <button class="gold" onclick="submitNewJob()">Publish job</button>
 </section>
 <section class="card hidden" id="jobs">
@@ -491,11 +493,46 @@ async function submitNewJob(){
  const trade=document.getElementById("newJobTrade").value;
  const description=document.getElementById("newJobDescription").value.trim();
  const postcode=document.getElementById("newJobPostcode").value.trim();
+ const photoInput=document.getElementById("newJobPhotos");
+ const photos=Array.from(photoInput.files||[]);
+ const allowedTypes=["image/jpeg","image/png","image/webp"];
+ if(!currentUser){msg("Please sign in before posting a job.");return}
  if(!title||!description||!postcode){msg("Please add a job title, description and postcode.");return}
- const {error}=await db.from("jobs").insert({customer_id:currentUser.id,title,description,trade,postcode});
+ if(photos.length>5){msg("Please choose no more than 5 photos.");return}
+ if(photos.some(file=>!allowedTypes.includes(file.type)||file.size>10485760)){
+   msg("Photos must be JPG, PNG or WebP and no larger than 10 MB each.");return;
+ }
+ const {data:job,error}=await db.from("jobs")
+   .insert({customer_id:currentUser.id,title,description,trade,postcode})
+   .select("id").single();
  if(error){msg(error.message);return}
+ if(photos.length){
+   const uploadedPaths=[];
+   for(const file of photos){
+     const extension=file.type==="image/jpeg"?"jpg":file.type==="image/png"?"png":"webp";
+     const path=job.id+"/"+currentUser.id+"/"+crypto.randomUUID()+"."+extension;
+     const {error:uploadError}=await db.storage.from("job-photos").upload(path,file,{contentType:file.type,upsert:false});
+     if(uploadError){
+       if(uploadedPaths.length) await db.storage.from("job-photos").remove(uploadedPaths);
+       msg("Your job was published, but a photo could not be uploaded: "+uploadError.message);
+       await loadMyJobsPage();navigate("jobs");return;
+     }
+     uploadedPaths.push(path);
+   }
+   const photoRows=uploadedPaths.map((storage_path,index)=>({
+     job_id:job.id,customer_id:currentUser.id,storage_path,
+     caption:photos[index]?.name||null
+   }));
+   const {error:photoError}=await db.from("job_photos").insert(photoRows);
+   if(photoError){
+     await db.storage.from("job-photos").remove(uploadedPaths);
+     msg("Your job was published, but the photo details could not be saved: "+photoError.message);
+     await loadMyJobsPage();navigate("jobs");return;
+   }
+ }
  ["newJobTitle","newJobDescription","newJobPostcode"].forEach(id=>document.getElementById(id).value="");
- msg("Your job has been published.");
+ photoInput.value="";
+ msg(photos.length?"Your job and photos have been published.":"Your job has been published.");
  await loadMyJobsPage();navigate("jobs");
 }
 async function loadProfile(){
