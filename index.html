@@ -159,6 +159,7 @@ button.secondary{background:#e8edf5;color:var(--navy)}
 <input id="loginEmail" type="email" placeholder="Email address">
 <input id="loginPassword" type="password" placeholder="Password">
 <button onclick="login()">Log in</button>
+<button id="googleAdminLogin" class="secondary hidden" type="button" onclick="loginWithGoogle()">Continue with Google</button>
 <button class="secondary" onclick="show('welcome')">Back</button>
 </section>
 
@@ -326,6 +327,8 @@ function applyAppModeUI(){
  if(!["all","customer","trades","admin"].includes(mode)){msg("Invalid app link. Please use one of the official JK TRADES app links.");return}
  const title=document.querySelector("#welcome h2");
  const intro=document.querySelector("#welcome p");
+ const googleAdminLogin=document.getElementById("googleAdminLogin");
+ if(googleAdminLogin)googleAdminLogin.classList.toggle("hidden",mode!=="admin");
  const registerType=document.getElementById("regType");
  if(mode!=="all"){
   if(title)title.textContent="JK TRADES — "+APP_LABELS[mode];
@@ -853,6 +856,20 @@ msg(data.session
  ? "Your account has been created. You can now continue."
  : "Registration submitted. Check your email to confirm your account before logging in.");
 }
+async function loginWithGoogle(){
+ if(APP_MODE!=="admin"){msg("Google sign-in is currently reserved for the private administrator account.");return}
+ const button=document.getElementById("googleAdminLogin");
+ if(button){button.disabled=true;button.textContent="Opening Google…"}
+ try{
+  const {error}=await db.auth.signInWithOAuth({
+   provider:"google",
+   options:{redirectTo:location.origin+location.pathname+"?app=admin"}
+  });
+  if(error)msg("Google sign-in could not start: "+error.message);
+ }catch(error){msg("Google sign-in could not start: "+(error?.message||"Please try again."));}
+ finally{if(button){button.disabled=false;button.textContent="Continue with Google"}}
+}
+window.loginWithGoogle=loginWithGoogle;
 async function login(){
 const button=document.querySelector("#login button.gold");
 const email=document.getElementById("loginEmail").value.trim();
@@ -882,6 +899,7 @@ async function loadAccount(user){
 currentUser=user;
 const {data:admin}=await db.from("admin_users").select("user_id").eq("user_id",user.id).maybeSingle();
 const accountType=user.user_metadata?.account_type;
+if(APP_MODE==="admin"&&user.email?.toLowerCase()!=="jameskinggmg@gmail.com"){currentUser=null;await db.auth.signOut();msg("This Google/email account is not authorised for the JK TRADES owner login.");return}
 if(APP_MODE==="admin"&&!admin){currentUser=null;await db.auth.signOut();msg("This private app is restricted to authorised administrators.");return}
 if(APP_MODE==="customer"&&(admin||accountType!=="customer")){currentUser=null;await db.auth.signOut();msg("Please use the app that matches your account type.");return}
 if(APP_MODE==="trades"&&(admin||accountType!=="tradesperson")){currentUser=null;await db.auth.signOut();msg("Please use the app that matches your account type.");return}
