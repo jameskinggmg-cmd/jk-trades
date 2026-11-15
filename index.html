@@ -326,7 +326,32 @@ function filterOpenJobs(){
 function renderJobList(target,rows){
  const el=document.getElementById(target);el.innerHTML="";
  if(!rows.length){el.innerHTML='<div class="item">No jobs found yet. Check back soon.</div>';return}
- rows.forEach(j=>el.append(makeItem(j.title,(j.trade||"Trade")+" · "+(j.postcode||"Location not provided")+" · "+(j.status||"open"))));
+ rows.forEach(j=>{
+  const card=makeItem(j.title,(j.trade||"Trade")+" · "+(j.postcode||"Location not provided")+" · "+(j.status||"open"));
+  const desc=document.createElement("p");desc.textContent=j.description||"";card.append(desc);
+  if(target==="findWorkResults" && currentDashboard==="trades" && currentTradeStatus==="approved"){
+   const form=document.createElement("div");form.className="quote-form";
+   const amount=document.createElement("input");amount.type="number";amount.min="0.01";amount.step="0.01";amount.placeholder="Your quote amount (£)";amount.id="quote-amount-"+j.id;
+   const message=document.createElement("textarea");message.rows=2;message.maxLength=2000;message.placeholder="Add a short message with what's included";message.id="quote-message-"+j.id;
+   const send=document.createElement("button");send.className="gold";send.textContent="Send quote";send.onclick=()=>sendJobQuote(j.id);
+   form.append(amount,message,send);card.append(form);
+  }
+  el.append(card);
+ });
+}
+async function sendJobQuote(jobId){
+ const amountInput=document.getElementById("quote-amount-"+jobId);
+ const messageInput=document.getElementById("quote-message-"+jobId);
+ const pounds=Number(amountInput?.value);
+ if(!Number.isFinite(pounds)||pounds<=0){msg("Enter a quote amount greater than £0.");return}
+ const amountPence=Math.round(pounds*100);
+ const {error}=await db.from("quotes").insert({
+  job_id:jobId,tradesperson_id:currentUser.id,amount_pence:amountPence,
+  message:(messageInput?.value||"").trim()||null,status:"sent"
+ });
+ if(error){msg(error.message);return}
+ msg("Your quote has been sent to the customer.");
+ amountInput.value="";messageInput.value="";
 }
 async function loadFindWork(){
  const {data,error}=await db.from("jobs").select("*").eq("status","open").order("created_at",{ascending:false});
@@ -336,8 +361,46 @@ async function loadFindWork(){
 async function loadMyJobsPage(){
  const {data,error}=await db.from("jobs").select("*").eq("customer_id",currentUser.id).order("created_at",{ascending:false});
  if(error){document.getElementById("jobsPageList").textContent=error.message;return}
- renderJobList("jobsPageList",data||[]);
- document.getElementById("statJobs").textContent=(data||[]).length;
+ const jobs=data||[];
+ document.getElementById("statJobs").textContent=jobs.length;
+ const host=document.getElementById("jobsPageList");host.innerHTML="";
+ if(!jobs.length){host.append(makeItem("No jobs posted yet","Your jobs will appear here once you publish one."));return}
+ const ids=jobs.map(j=>j.id);
+ const {data:quotes,error:quoteError}=await db.from("quotes").select("id,job_id,tradesperson_id,amount_pence,message,status,created_at").in("job_id",ids).order("created_at",{ascending:false});
+ if(quoteError){
+  host.append(makeItem("Your jobs", "Jobs are loaded, but quotes could not be retrieved. If the marketplace migration has not been applied yet, quote features will become available after setup."));
+  renderCustomerJobCards(host,jobs,[]);
+  return;
+ }
+ renderCustomerJobCards(host,jobs,quotes||[]);
+}
+function renderCustomerJobCards(host,jobs,quotes){
+ jobs.forEach(job=>{
+  const card=makeItem(job.title,(job.trade||"Trade")+" · "+(job.postcode||"Location not provided")+" · "+(job.status||"open"));
+  const desc=document.createElement("p");desc.textContent=job.description||"";card.append(desc);
+  const jobQuotes=quotes.filter(q=>q.job_id===job.id);
+  const heading=document.createElement("h3");heading.textContent="Quotes received ("+jobQuotes.length+")";card.append(heading);
+  if(!jobQuotes.length){const empty=document.createElement("p");empty.textContent="No quotes yet. Approved tradespeople can send offers for this job.";card.append(empty)}
+  jobQuotes.forEach(q=>{
+   const quote=document.createElement("div");quote.className="item";
+   const amount=document.createElement("strong");amount.textContent=new Intl.NumberFormat("en-GB",{style:"currency",currency:"GBP"}).format(q.amount_pence/100);
+   const detail=document.createElement("p");detail.textContent=(q.message||"No message provided")+" · "+q.status;
+   quote.append(amount,detail);
+   if(q.status==="sent" && job.status==="open"){
+    const accept=document.createElement("button");accept.className="gold";accept.textContent="Accept this quote";accept.onclick=()=>acceptJobQuote(q.id);
+    quote.append(accept);
+   }
+   card.append(quote);
+  });
+  host.append(card);
+ });
+}
+async function acceptJobQuote(quoteId){
+ if(!confirm("Accept this quote? Other pending quotes for the same job will be declined."))return;
+ const {error}=await db.rpc("accept_job_quote",{p_quote_id:quoteId});
+ if(error){msg(error.message);return}
+ msg("Quote accepted. Other pending quotes for this job have been declined.");
+ await loadMyJobsPage();
 }
 async function submitNewJob(){
  const title=document.getElementById("newJobTitle").value.trim();
