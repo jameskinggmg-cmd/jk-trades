@@ -211,6 +211,7 @@ button.secondary{background:#e8edf5;color:var(--navy)}
   <div id="conversationList" aria-live="polite"><p class="small">Loading your conversations…</p></div>
   <div id="conversationPanel" class="hidden">
     <div class="item"><strong id="conversationTitle">Conversation</strong><p id="conversationSubtitle"></p></div>
+    <div id="sharedJobAddress" class="item hidden" aria-live="polite"></div>
     <div id="conversationMessages" aria-live="polite"></div>
     <label for="messageDraft" class="small">Your message</label>
     <textarea id="messageDraft" rows="3" maxlength="5000" placeholder="Write a message…"></textarea>
@@ -548,6 +549,25 @@ async function openConversation(conversationId,jobId){
  document.getElementById("conversationTitle").textContent="Job conversation";
  const {data:job}=await db.from("jobs").select("title,trade,postcode").eq("id",jobId).maybeSingle();
  document.getElementById("conversationSubtitle").textContent=job?[job.title,job.trade,job.postcode].filter(Boolean).join(" · "):"Private conversation about your job";
+ const addressBox=document.getElementById("sharedJobAddress");
+ addressBox.classList.add("hidden");addressBox.innerHTML="";
+ if(currentDashboard==="trades"){
+  const {data:addressRows,error:addressError}=await db.rpc("get_shared_job_address",{p_job_id:jobId});
+  addressBox.classList.remove("hidden");
+  const heading=document.createElement("strong");heading.textContent="Customer address";addressBox.append(heading);
+  if(addressError){
+   const note=document.createElement("p");note.className="small";note.textContent="The shared address could not be loaded. Please refresh and try again.";addressBox.append(note);
+   console.warn("Shared job address lookup failed:",addressError.message);
+  }else if(addressRows?.length){
+   const address=addressRows[0];
+   [address.address_line1,address.address_line2,address.town_city,address.postcode].filter(Boolean).forEach(value=>{
+    const line=document.createElement("p");line.textContent=value;addressBox.append(line);
+   });
+   const note=document.createElement("p");note.className="small";note.textContent="The customer chose to share this address for this accepted job.";addressBox.append(note);
+  }else{
+   const note=document.createElement("p");note.className="small";note.textContent="The customer has not shared their full home address for this job. The job postcode is shown above.";addressBox.append(note);
+  }
+ }
  await loadConversationMessages();
 }
 async function loadConversationMessages(){
