@@ -7,7 +7,7 @@ const apps = {
 if (!apps[mode]) throw new Error("JK_APP_MODE must be customer, trades or admin");
 module.exports = {
   ...apps[mode],
-  webDir: ".",
+  webDir: "www",
   server: {
     url: `https://jameskinggmg-cmd.github.io/jk-trades/?app=${mode}`,
     cleartext: false,
