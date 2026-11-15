@@ -195,7 +195,7 @@ button.secondary{background:#e8edf5;color:var(--navy)}
   <div class="page-heading"><div><h2>Post a job</h2><p>Tell tradespeople what you need doing.</p></div></div>
   <p class="small">Posting a job is free. Add a clear description and the job postcode.</p>
   <input id="newJobTitle" placeholder="What work do you need doing?">
-  <select id="newJobTrade"><option>Plumbing</option><option>Electrical</option><option>Heating</option><option>Roofing</option><option>Carpentry</option><option>Painting and decorating</option><option>Handyman</option><option>Other</option></select>
+  <label class="small" for="newJobTrade">Trade category</label><select id="newJobTrade" class="trade-category-select"></select><label class="small" for="newJobService">Specialist service</label><select id="newJobService" class="trade-service-select"></select>
   <textarea id="newJobDescription" rows="4" placeholder="Describe the work, any problems and when you need it done"></textarea>
   <input id="newJobPostcode" placeholder="Job postcode">
   <label class="small" for="newJobPhotos">Add job photos (up to 5 images, 10 MB each)</label>
@@ -238,12 +238,8 @@ button.secondary{background:#e8edf5;color:var(--navy)}
 <section class="card hidden" id="customer">
 <h2>Post a job for free</h2>
 <input id="jobTitle" placeholder="What work do you need doing?">
-<select id="jobTrade">
-<option>Plumbing</option><option>Electrical</option>
-<option>Heating</option><option>Roofing</option>
-<option>Carpentry</option><option>Painting and decorating</option>
-<option>Handyman</option><option>Other</option>
-</select>
+<label class="small" for="jobTrade">Trade category</label><select id="jobTrade" class="trade-category-select"></select>
+<label class="small" for="jobService">Specialist service</label><select id="jobService" class="trade-service-select"></select>
 <textarea id="jobDescription" placeholder="Describe the job"></textarea>
 <input id="jobPostcode" placeholder="Job postcode">
 <button class="gold" onclick="postJob()">Post job</button>
@@ -257,7 +253,8 @@ button.secondary{background:#e8edf5;color:var(--navy)}
 <div id="tradeApplicationForm">
 <h3>Apply to join JK TRADES</h3>
 <input id="businessName" placeholder="Business name">
-<input id="tradeName" placeholder="Your trade">
+<label class="small" for="tradeName">Main trade category</label><select id="tradeName" class="trade-category-select"></select>
+<label class="small" for="tradeService">Specialist services offered</label><select id="tradeService" class="trade-service-select"></select>
 <input id="tradePostcode" placeholder="Your postcode">
 <input id="tradePhone" placeholder="Contact telephone">
 <button class="gold" onclick="applyTrade()">Submit application</button>
@@ -292,6 +289,30 @@ const SUPABASE_URL = "https://zrloxobjeetxtjpevthc.supabase.co";
 const SUPABASE_KEY = "sb_publishable_OvPRFg4iqg39SMWlNnGmVg_kyP0zh3j";
 if(!window.supabase?.createClient){throw new Error("JK TRADES could not load its secure sign-in service. Check your internet connection, then refresh.");}
  const db = window.supabase.createClient(SUPABASE_URL,SUPABASE_KEY,{auth:{persistSession:true,autoRefreshToken:true,detectSessionInUrl:true}});
+const TRADE_SERVICES = {
+ "Plumbing & Heating":["General plumbing","Boiler installation & servicing","Central heating & radiators","Bathrooms & wet rooms","Blocked drains & drainage","Gas work (Gas Safe)","Underfloor heating"],
+ "Electrical & Sparks":["Electrical installations","Rewires & consumer units","Fault finding & repairs","EICR inspections & testing","Emergency electrician","Lighting & smart controls","Fire & security systems"],
+ "Energy & Renewables":["Solar PV installation","Battery storage","EV charger installation","Heat pumps","Energy-efficiency upgrades","Insulation & ventilation","Solar maintenance & repairs"],
+ "Building & Renovation":["General building","Extensions & conversions","Bricklaying & repointing","Plastering & rendering","Roofing & roof repairs","Carpentry & joinery","Painting & decorating","Flooring & tiling","Windows & doors","Handyman & property maintenance"],
+ "Outdoor & Groundworks":["Landscaping & gardening","Fencing & decking","Driveways & paving","Groundworks & drainage","Tree surgery"],
+ "Cleaning & Specialist Services":["Domestic cleaning","Commercial cleaning","End of tenancy cleaning","Window cleaning","Carpet & upholstery cleaning","Pest control","Waste removal"]
+};
+function populateTradeSelectors(){
+ document.querySelectorAll(".trade-category-select").forEach(select=>{
+  Object.keys(TRADE_SERVICES).forEach(category=>{
+   const option=document.createElement("option");option.value=category;option.textContent=category;select.append(option);
+  });
+  const serviceId=select.id==="newJobTrade"?"newJobService":select.id==="jobTrade"?"jobService":"tradeService";
+  const serviceSelect=document.getElementById(serviceId);
+  const update=()=>{
+   serviceSelect.innerHTML="";
+   (TRADE_SERVICES[select.value]||[]).forEach(service=>{
+    const option=document.createElement("option");option.value=service;option.textContent=service;serviceSelect.append(option);
+   });
+  };
+  select.addEventListener("change",update);update();
+ });
+}
 let currentUser = null;
 let currentDashboard = null;
 let currentTradeStatus = null;
@@ -606,6 +627,7 @@ function closeConversation(){
 async function submitNewJob(){
  const title=document.getElementById("newJobTitle").value.trim();
  const trade=document.getElementById("newJobTrade").value;
+ const service=document.getElementById("newJobService").value;
  const description=document.getElementById("newJobDescription").value.trim();
  const postcode=document.getElementById("newJobPostcode").value.trim();
  const photoInput=document.getElementById("newJobPhotos");
@@ -618,7 +640,7 @@ async function submitNewJob(){
    msg("Photos must be JPG, PNG or WebP and no larger than 10 MB each.");return;
  }
  const {data:job,error}=await db.from("jobs")
-   .insert({customer_id:currentUser.id,title,description,trade,postcode})
+   .insert({customer_id:currentUser.id,title,description,trade,service,postcode})
    .select("id").single();
  if(error){msg(error.message);return}
  if(photos.length){
@@ -758,7 +780,7 @@ async function postJob(){
 if(!currentUser)return;
 const {error}=await db.from("jobs").insert({
 customer_id:currentUser.id,title:jobTitle.value.trim(),
-description:jobDescription.value.trim(),trade:jobTrade.value,
+description:jobDescription.value.trim(),trade:jobTrade.value,service:jobService.value,
 postcode:jobPostcode.value.trim()
 });
 if(error){msg(error.message);return}
@@ -775,7 +797,8 @@ if(error){myJobs.textContent=error.message;return}
 async function applyTrade(){
 if(!currentUser){msg("Please sign in before applying.");return}
 const business=businessName.value.trim();
-const trade=tradeName.value.trim();
+const trade=tradeName.value;
+const service=tradeService.value;
 const postcode=tradePostcode.value.trim();
 const phone=tradePhone.value.trim();
 if(!business||!trade||!postcode||!phone){
@@ -792,7 +815,7 @@ if(existing){
  await loadTradePage();return;
 }
 const {error}=await db.from("trade_applications").insert({
- user_id:currentUser.id,business_name:business,trade,postcode,phone
+ user_id:currentUser.id,business_name:business,trade,service,postcode,phone
 });
 if(error){
  msg(error.code==="23505"
@@ -874,6 +897,7 @@ db.auth.onAuthStateChange((event,session)=>{
     updateNavigationForRole();
   }
 });
+populateTradeSelectors();
 (async()=>{
 const {data}=await db.auth.getSession();
 if(data.session)await loadAccount(data.session.user);
