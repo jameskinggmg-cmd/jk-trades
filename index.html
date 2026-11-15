@@ -579,10 +579,22 @@ async function register(){
 const name=regName.value.trim(),email=regEmail.value.trim(),
 password=regPassword.value,type=regType.value;
 if(!name||!email||!password){msg("Please complete all fields.");return}
-const {error}=await db.auth.signUp({
-email,password,options:{data:{full_name:name,account_type:type}}
+if(name.length>100 || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)){
+ msg("Enter a valid name and email address.");return;
+}
+if(password.length<12){
+ msg("Use a password with at least 12 characters.");return;
+}
+if(!["customer","tradesperson"].includes(type)){
+ msg("Choose a valid account type.");return;
+}
+const {data,error}=await db.auth.signUp({
+ email,password,options:{data:{full_name:name,account_type:type}}
 });
-msg(error?error.message:"Registration submitted. Check your email to confirm your account.");
+if(error){msg(error.message);return}
+msg(data.session
+ ? "Your account has been created. You can now continue."
+ : "Registration submitted. Check your email to confirm your account before logging in.");
 }
 async function login(){
 const {error}=await db.auth.signInWithPassword({
@@ -639,13 +651,35 @@ if(error){myJobs.textContent=error.message;return}
 (data||[]).forEach(j=>myJobs.append(makeItem(j.title,j.trade+" · "+j.postcode+" · "+j.status)));
 }
 async function applyTrade(){
+if(!currentUser){msg("Please sign in before applying.");return}
+const business=businessName.value.trim();
+const trade=tradeName.value.trim();
+const postcode=tradePostcode.value.trim();
+const phone=tradePhone.value.trim();
+if(!business||!trade||!postcode||!phone){
+ msg("Complete your business name, trade, postcode and telephone number.");return;
+}
+if(business.length>120||trade.length>80||postcode.length>12||phone.length>30){
+ msg("Please check the length of your application details.");return;
+}
+const {data:existing,error:lookupError}=await db.from("trade_applications")
+ .select("id,status").eq("user_id",currentUser.id).maybeSingle();
+if(lookupError){msg("We couldn't check your existing application: "+lookupError.message);return}
+if(existing){
+ msg("You have already submitted an application. Current status: "+existing.status+".");
+ await loadTradePage();return;
+}
 const {error}=await db.from("trade_applications").insert({
-user_id:currentUser.id,business_name:businessName.value.trim(),
-trade:tradeName.value.trim(),postcode:tradePostcode.value.trim(),
-phone:tradePhone.value.trim(),status:"pending"
+ user_id:currentUser.id,business_name:business,trade,postcode,phone
 });
-msg(error?error.message:"Application submitted. It is awaiting admin approval.");
-if(!error)await loadAccount(currentUser);
+if(error){
+ msg(error.code==="23505"
+  ? "You already have an application awaiting review."
+  : "Your application couldn't be submitted: "+error.message);
+ return;
+}
+msg("Application submitted. It is awaiting admin approval.");
+await loadTradePage();
 }
 async function loadTradePage(){
  const statusBox=document.getElementById("tradeApplicationStatus");
