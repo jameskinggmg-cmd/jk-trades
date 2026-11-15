@@ -261,6 +261,36 @@ button.secondary{background:#e8edf5;color:var(--navy)}
 <p class="small">Applications are reviewed by JK TRADES. You can browse available jobs once approved.</p>
 </div>
 <div id="approvedJobsPanel" class="hidden"><h3>Available jobs</h3><div id="openJobs"></div></div>
+<div id="approvedTradeTools" class="hidden">
+ <hr><h3>Your skills & specialist services</h3>
+ <p class="small">Add skills from any trade category. They help customers and the marketplace understand the work you can take on.</p>
+ <label class="small" for="extraSkillCategory">Trade category</label><select id="extraSkillCategory"></select>
+ <label class="small" for="extraSkillService">Specialist skill</label><select id="extraSkillService"></select>
+ <button type="button" class="secondary" onclick="addTradeSkill()">Add skill</button>
+ <div id="myTradeSkills"></div>
+ <hr><h3>Qualifications & certificates</h3>
+ <p class="small">Upload evidence so JK TRADES can review it. Your registration and certificate numbers are private and are never shown on your public profile.</p>
+ <label class="small" for="credentialType">Credential type</label>
+ <select id="credentialType">
+  <option value="gas_safe_business">Gas Safe business registration</option>
+  <option value="gas_engineer_card">Gas Safe engineer ID card</option>
+  <option value="electrical_qualification">Electrical qualification</option>
+  <option value="electrical_scheme">Electrical competent-person scheme (if applicable)</option>
+  <option value="renewables_qualification">Renewables / energy qualification</option>
+  <option value="insurance">Public liability insurance</option>
+  <option value="other">Other qualification or certificate</option>
+ </select>
+ <input id="credentialTitle" placeholder="Qualification / certificate title">
+ <input id="credentialIssuer" placeholder="Awarding body, scheme or insurer">
+ <input id="credentialNumber" placeholder="Registration / certificate / policy number">
+ <textarea id="credentialScope" placeholder="Work categories, scope or relevant details"></textarea>
+ <label class="small" for="credentialIssued">Issue date (if shown)</label><input id="credentialIssued" type="date">
+ <label class="small" for="credentialExpiry">Expiry / renewal date (if applicable)</label><input id="credentialExpiry" type="date">
+ <label class="small" for="credentialEvidence">Upload certificate, card or supporting evidence (PDF/JPG/PNG/WebP, max 10MB)</label>
+ <input id="credentialEvidence" type="file" accept=".pdf,.jpg,.jpeg,.png,.webp,application/pdf,image/jpeg,image/png,image/webp">
+ <button type="button" class="gold" onclick="submitTradeCredential()">Submit for verification</button>
+ <div id="myCredentials"></div>
+</div>
 </section>
 
 <section class="card hidden" id="admin">
@@ -268,6 +298,7 @@ button.secondary{background:#e8edf5;color:var(--navy)}
 <p>Private administration area</p>
 <h3>Tradesperson applications</h3>
 <div id="applications"></div>
+<h3>Qualification verification queue</h3><div id="credentialReviewQueue"></div>
 <h3>Customer jobs</h3>
 <div id="allJobs"></div>
 </section>
@@ -298,6 +329,12 @@ const TRADE_SERVICES = {
  "Cleaning & Specialist Services":["Domestic cleaning","Commercial cleaning","End of tenancy cleaning","Window cleaning","Carpet & upholstery cleaning","Pest control","Waste removal"]
 };
 function populateTradeSelectors(){
+ const extraCategory=document.getElementById("extraSkillCategory");
+ if(extraCategory){
+  Object.keys(TRADE_SERVICES).forEach(category=>{const o=document.createElement("option");o.value=category;o.textContent=category;extraCategory.append(o)});
+  const updateExtra=()=>{const target=document.getElementById("extraSkillService");target.innerHTML="";(TRADE_SERVICES[extraCategory.value]||[]).forEach(service=>{const o=document.createElement("option");o.value=service;o.textContent=service;target.append(o)})};
+  extraCategory.addEventListener("change",updateExtra);updateExtra();
+ }
  document.querySelectorAll(".trade-category-select").forEach(select=>{
   Object.keys(TRADE_SERVICES).forEach(category=>{
    const option=document.createElement("option");option.value=category;option.textContent=category;select.append(option);
@@ -844,6 +881,8 @@ async function loadTradePage(){
  const statusBox=document.getElementById("tradeApplicationStatus");
  const form=document.getElementById("tradeApplicationForm");
  const jobsPanel=document.getElementById("approvedJobsPanel");
+ const toolsPanel=document.getElementById("approvedTradeTools");
+ if(toolsPanel)toolsPanel.classList.add("hidden");
  statusBox.textContent="Checking your application…";
  form.classList.add("hidden");
  jobsPanel.classList.add("hidden");
@@ -859,7 +898,10 @@ async function loadTradePage(){
  if(app.status==="approved"){
    statusBox.textContent="Your tradesperson application is approved. Available jobs are shown below.";
    jobsPanel.classList.remove("hidden");
+   if(toolsPanel)toolsPanel.classList.remove("hidden");
    await loadOpenJobs();
+   await loadMyTradeSkills();
+   await loadMyCredentials();
  }else if(app.status==="rejected"){
    statusBox.textContent="Your application was not approved. Please contact JK TRADES if you believe this is incorrect.";
  }else{
@@ -878,7 +920,80 @@ const h=document.createElement("strong");h.textContent=title;
 const p=document.createElement("p");p.textContent=detail;
 d.append(h,p);return d;
 }
+
+async function addTradeSkill(){
+ if(!currentUser)return;
+ const category=document.getElementById("extraSkillCategory").value;
+ const service=document.getElementById("extraSkillService").value;
+ const {error}=await db.from("trade_skills").insert({user_id:currentUser.id,category,service});
+ msg(error?(error.code==="23505"?"That skill is already on your list.":error.message):"Skill added to your profile.");
+ await loadMyTradeSkills();
+}
+async function loadMyTradeSkills(){
+ const host=document.getElementById("myTradeSkills");if(!host||!currentUser)return;
+ const {data,error}=await db.from("trade_skills").select("id,category,service").eq("user_id",currentUser.id).order("category");
+ host.innerHTML="";if(error){host.textContent=error.message;return}
+ (data||[]).forEach(skill=>{const row=makeItem(skill.category,skill.service);const b=document.createElement("button");b.type="button";b.className="secondary";b.textContent="Remove";b.onclick=async()=>{const {error}=await db.from("trade_skills").delete().eq("id",skill.id);msg(error?error.message:"Skill removed.");await loadMyTradeSkills()};row.append(b);host.append(row)});
+ if(!data?.length)host.textContent="No additional skills added yet.";
+}
+async function submitTradeCredential(){
+ if(!currentUser)return;
+ const type=document.getElementById("credentialType").value;
+ const title=document.getElementById("credentialTitle").value.trim();
+ const issuer=document.getElementById("credentialIssuer").value.trim();
+ const number=document.getElementById("credentialNumber").value.trim();
+ const scope=document.getElementById("credentialScope").value.trim();
+ const issued=document.getElementById("credentialIssued").value||null;
+ const expires=document.getElementById("credentialExpiry").value||null;
+ const file=document.getElementById("credentialEvidence").files[0];
+ if(!title||!number){msg("Enter the qualification title and its registration or certificate number.");return}
+ if(!file){msg("Please upload the certificate, ID card or supporting evidence for review.");return}
+ const allowed=["application/pdf","image/jpeg","image/png","image/webp"];
+ if(!allowed.includes(file.type)||file.size>10*1024*1024){msg("Use a PDF, JPG, PNG or WebP file no larger than 10MB.");return}
+ if(issued&&expires&&expires<issued){msg("The expiry date cannot be earlier than the issue date.");return}
+ msg("Uploading your private evidence…");
+ const ext=(file.name.split(".").pop()||"file").toLowerCase().replace(/[^a-z0-9]/g,"");
+ const path=currentUser.id+"/"+crypto.randomUUID()+"."+ext;
+ const upload=await db.storage.from("trade-credential-evidence").upload(path,file,{contentType:file.type,upsert:false});
+ if(upload.error){msg("Evidence upload failed: "+upload.error.message);return}
+ const {error}=await db.from("trade_credentials").insert({
+  user_id:currentUser.id,credential_type:type,qualification_title:title,issuer:issuer||null,
+  registration_number:number,scope:scope||null,issued_at:issued,expires_at:expires,evidence_path:path
+ });
+ if(error){
+  await db.storage.from("trade-credential-evidence").remove([path]);
+  msg("We couldn't save the credential: "+error.message);return;
+ }
+ ["credentialTitle","credentialIssuer","credentialNumber","credentialScope","credentialIssued","credentialExpiry","credentialEvidence"].forEach(id=>document.getElementById(id).value="");
+ msg("Credential submitted. It remains pending until JK TRADES checks the evidence.");
+ await loadMyCredentials();
+}
+async function loadMyCredentials(){
+ const host=document.getElementById("myCredentials");if(!host||!currentUser)return;
+ const {data,error}=await db.from("trade_credentials").select("id,credential_type,qualification_title,issuer,registration_number,expires_at,verification_status").eq("user_id",currentUser.id).order("created_at",{ascending:false});
+ host.innerHTML="";if(error){host.textContent=error.message;return}
+ (data||[]).forEach(c=>host.append(makeItem(c.qualification_title||c.credential_type,
+  (c.issuer||"")+(c.registration_number?" · Ref "+c.registration_number:"")+" · "+c.verification_status.toUpperCase()+(c.expires_at?" · Expires "+c.expires_at:""))));
+ if(!data?.length)host.textContent="No qualifications submitted yet.";
+}
+async function loadCredentialReviewQueue(){
+ const host=document.getElementById("credentialReviewQueue");if(!host)return;
+ const {data,error}=await db.from("trade_credentials").select("*").order("created_at",{ascending:false});
+ host.innerHTML="";if(error){host.textContent=error.message;return}
+ (data||[]).forEach(c=>{
+  const row=makeItem(c.qualification_title||c.credential_type,
+   "Tradesperson: "+c.user_id+" · "+(c.issuer||"")+(c.registration_number?" · Ref "+c.registration_number:"")+" · "+c.verification_status.toUpperCase()+(c.expires_at?" · Expires "+c.expires_at:"")+(c.scope?" · "+c.scope:""));
+  if(c.evidence_path){const link=document.createElement("button");link.type="button";link.className="secondary";link.textContent="View private evidence";link.onclick=async()=>{const {data,error}=await db.storage.from("trade-credential-evidence").createSignedUrl(c.evidence_path,120);if(error){msg(error.message);return}window.open(data.signedUrl,"_blank","noopener")};row.append(link)}
+  if(c.verification_status==="pending"){
+   ["verified","rejected"].forEach(status=>{const b=document.createElement("button");b.type="button";b.className="secondary";b.textContent=status==="verified"?"Approve verified":"Reject";b.onclick=async()=>{const note=prompt("Add an admin verification note (optional):")||null;const {error}=await db.from("trade_credentials").update({verification_status:status,verified_at:status==="verified"?new Date().toISOString():null,verified_by:currentUser.id,admin_notes:note}).eq("id",c.id);msg(error?error.message:"Credential "+status+".");if(!error)await loadCredentialReviewQueue()};row.append(b)});
+  }
+  host.append(row);
+ });
+ if(!data?.length)host.textContent="No credentials submitted for review.";
+}
+
 async function loadAdmin(){
+await loadCredentialReviewQueue();
 const {data:apps,error}=await db.from("trade_applications").select("*").order("created_at",{ascending:false});
 applications.innerHTML="";
 if(error){applications.textContent=error.message;return}
