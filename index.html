@@ -6,26 +6,73 @@
 <title>JK TRADES | UK Trades Marketplace</title>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <style>
-:root{--navy:#101d35;--gold:#d5ad52;--light:#f4f6fa}
+:root{--navy:#101d35;--gold:#d5ad52;--light:#f4f6fa;--ink:#182238;--muted:#718096;--line:#e5eaf1;--surface:#fff;--green:#17845b}
 *{box-sizing:border-box}
-body{margin:0;background:var(--light);font-family:Arial,sans-serif;color:#182238}
-header{background:var(--navy);color:white;padding:24px 16px;text-align:center}
+body{margin:0;background:var(--light);font-family:Inter,system-ui,-apple-system,Segoe UI,sans-serif;color:var(--ink)}
+button,input,textarea,select{font:inherit}
+button{transition:transform .15s,background .15s}
+button:active{transform:scale(.985)}
+button:focus-visible,a:focus-visible,input:focus-visible,textarea:focus-visible,select:focus-visible{outline:3px solid #d5ad5280;outline-offset:2px}
+
+header{background:linear-gradient(120deg,#0d192e,#172b4c);color:white;padding:22px 18px;text-align:left;box-shadow:0 5px 22px #101d3520}
+.header-inner{max-width:1180px;margin:auto;display:flex;align-items:center;justify-content:space-between;gap:16px}
+.brand-lockup{display:flex;align-items:center;gap:12px}
+.brand-mark{width:46px;height:46px;border:1px solid #d5ad5280;border-radius:13px;display:grid;place-items:center;color:var(--gold);font-weight:900;font-size:18px}
+header h1{font-size:21px;letter-spacing:3px}
+header p{font-size:12px;color:#cbd5e1;margin:4px 0 0}
+
 header h1{margin:0;color:var(--gold);letter-spacing:3px}
 header p{margin:8px 0 0}
 .session-nav{max-width:650px;margin:16px auto 0;display:flex;gap:10px;justify-content:center}
 .session-nav button{width:auto;flex:1;max-width:220px;margin:0}
 .session-nav.hidden{display:none}
-main{max-width:650px;margin:25px auto;padding:0 14px}
-.card{background:white;padding:22px;border-radius:12px;margin-bottom:18px;box-shadow:0 3px 14px #0000000d}
+main{max-width:1180px;margin:26px auto;padding:0 18px}
+.app-layout{display:grid;grid-template-columns:235px minmax(0,1fr);gap:22px;align-items:start}
+.side-nav{background:#fff;border:1px solid var(--line);border-radius:16px;padding:13px;position:sticky;top:18px;box-shadow:0 5px 20px #101d3508}
+.side-nav .nav-caption{font-size:10px;letter-spacing:1.5px;color:#9aa5b5;font-weight:800;padding:12px 12px 7px}
+.nav-link{display:flex;align-items:center;gap:12px;width:100%;padding:12px;border:0;background:transparent;color:#536176;text-align:left;border-radius:10px;font-weight:650;margin:2px 0}
+.nav-link:hover,.nav-link.active{background:#f5f2e9;color:var(--navy)}
+.nav-link.active{box-shadow:inset 3px 0 var(--gold)}
+.nav-icon{width:22px;text-align:center;font-size:17px}
+.content-area{min-width:0}
+.page-heading{display:flex;justify-content:space-between;align-items:flex-start;gap:14px;margin:4px 0 20px}
+.page-heading h2{font-size:27px;margin:0 0 5px}
+.page-heading p{margin:0;color:var(--muted)}
+.stats-grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:12px;margin-bottom:18px}
+.stat-card{background:#fff;border:1px solid var(--line);border-radius:14px;padding:17px}
+.stat-card strong{font-size:25px;color:var(--navy);display:block}
+.stat-card span{font-size:12px;color:var(--muted)}
+.hero-panel{background:linear-gradient(115deg,#101d35,#203c64);color:white;border-radius:18px;padding:25px;margin-bottom:18px;position:relative;overflow:hidden}
+.hero-panel h2{color:white;font-size:26px;margin:0 0 8px}
+.hero-panel p{color:#d9e2ef;max-width:560px;line-height:1.55}
+.hero-panel .hero-tag{color:var(--gold);font-size:11px;font-weight:800;letter-spacing:1.6px}
+.hero-actions{display:flex;gap:10px;flex-wrap:wrap;margin-top:17px}
+.hero-actions button{width:auto;min-width:150px;margin:0}
+.quick-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px}
+.quick-card{background:#fff;border:1px solid var(--line);border-radius:14px;padding:18px;text-align:left;color:var(--ink)}
+.quick-card strong{display:block;color:var(--navy);margin:7px 0}
+.quick-card span{color:var(--muted);font-size:13px;line-height:1.4}
+.quick-card .quick-icon{font-size:22px}
+.mobile-nav{display:none}
+
+.card{background:white;padding:22px;border-radius:15px;margin-bottom:18px;box-shadow:0 3px 14px #0000000d;border:1px solid var(--line)}
+.card h2{font-size:20px}
+
 h2{margin-top:0;color:var(--navy)}
 input,textarea,select,button{width:100%;padding:13px;margin:7px 0;border-radius:7px;font-size:16px}
-input,textarea,select{border:1px solid #ccd2dc}
+input,textarea,select{border:1px solid #d8dee8;background:#fff}
+input:focus,textarea:focus,select:focus{border-color:var(--gold)}
+
 button{background:var(--navy);color:white;border:0;font-weight:bold;cursor:pointer}
 button.gold{background:var(--gold);color:var(--navy)}
 button.secondary{background:#e8edf5;color:var(--navy)}
 .hidden{display:none}
 .small{font-size:13px;color:#687386}
-.item{border:1px solid #dce1e9;padding:13px;border-radius:8px;margin:10px 0}
+.item{border:1px solid #dce1e9;padding:15px;border-radius:11px;margin:10px 0;background:#fff}
+.item p{color:var(--muted);line-height:1.45;margin:7px 0 0}
+.pill{display:inline-flex;align-items:center;border-radius:99px;background:#f5f2e9;color:#80621e;padding:5px 9px;font-size:11px;font-weight:800}
+.notice{padding:14px;border-radius:11px;background:#f8f6ef;border:1px solid #eee4c9;color:#6c592d;line-height:1.5}
+
 .status{font-weight:bold;color:#8a6415}
 @media(max-width:480px){
   .session-nav{gap:8px}
@@ -35,12 +82,13 @@ button.secondary{background:#e8edf5;color:var(--navy)}
 </head>
 <body>
 <header>
-<h1>JK TRADES</h1>
-<p>Trusted trades. Local jobs. Nationwide service.</p>
-<nav id="sessionNav" class="session-nav hidden" aria-label="Account navigation">
-<button type="button" class="gold" onclick="goToDashboard()">Dashboard</button>
-<button type="button" class="secondary" onclick="logout()">Log out</button>
-</nav>
+<div class="header-inner">
+  <div class="brand-lockup"><div class="brand-mark">JK</div><div><h1>JK TRADES</h1><p>Trusted trades. Local jobs. Nationwide service.</p></div></div>
+  <nav id="sessionNav" class="session-nav hidden" aria-label="Account navigation">
+    <button type="button" class="gold" onclick="goToDashboard()">My dashboard</button>
+    <button type="button" class="secondary" onclick="logout()">Log out</button>
+  </nav>
+</div>
 </header>
 <main>
 <section class="card" id="welcome">
@@ -72,6 +120,62 @@ button.secondary{background:#e8edf5;color:var(--navy)}
 <button class="secondary" onclick="show('welcome')">Back</button>
 </section>
 
+<div class="app-layout">
+<aside class="side-nav hidden" id="sideNav" aria-label="Main navigation">
+  <div class="nav-caption">WORKSPACE</div>
+  <button class="nav-link active" data-page="home" onclick="navigate('home')"><span class="nav-icon">⌂</span>Dashboard</button>
+  <button class="nav-link" data-page="findwork" onclick="navigate('findwork')"><span class="nav-icon">⌕</span>Find work</button>
+  <button class="nav-link" data-page="postjob" onclick="navigate('postjob')"><span class="nav-icon">＋</span>Post a job</button>
+  <button class="nav-link" data-page="jobs" onclick="navigate('jobs')"><span class="nav-icon">▤</span>My jobs</button>
+  <button class="nav-link" data-page="messages" onclick="navigate('messages')"><span class="nav-icon">✉</span>Messages</button>
+  <div class="nav-caption">ACCOUNT</div>
+  <button class="nav-link" data-page="profile" onclick="navigate('profile')"><span class="nav-icon">◉</span>My profile</button>
+  <button class="nav-link" data-page="settings" onclick="navigate('settings')"><span class="nav-icon">⚙</span>Settings</button>
+</aside>
+<div class="content-area">\n<section class="card hidden" id="home">
+  <div class="page-heading"><div><h2 id="welcomeTitle">Your dashboard</h2><p id="welcomeSubtitle">Your jobs and account activity in one place.</p></div><span class="pill">JK TRADES MEMBER</span></div>
+  <div class="hero-panel"><div class="hero-tag">YOUR LOCAL TRADES MARKETPLACE</div><h2 id="heroTitle">What do you need help with?</h2><p id="heroText">Post a job and connect with local tradespeople. Keep everything organised from your JK TRADES dashboard.</p><div class="hero-actions"><button class="gold" id="heroPrimary" onclick="navigate('postjob')">Post a job</button><button class="secondary" id="heroSecondary" onclick="navigate('jobs')">View my jobs</button></div></div>
+  <div class="stats-grid"><div class="stat-card"><strong id="statJobs">—</strong><span>My jobs</span></div><div class="stat-card"><strong id="statStatus">—</strong><span>Account status</span></div><div class="stat-card"><strong id="statRole">—</strong><span>Account type</span></div></div>
+  <h2>Quick access</h2><div class="quick-grid">
+    <button class="quick-card" onclick="navigate('postjob')"><span class="quick-icon">＋</span><strong>Post a job</strong><span>Tell local tradespeople what needs doing.</span></button>
+    <button class="quick-card" onclick="navigate('jobs')"><span class="quick-icon">▤</span><strong>My jobs</strong><span>See the jobs you've posted and their status.</span></button>
+    <button class="quick-card" onclick="navigate('profile')"><span class="quick-icon">◉</span><strong>My profile</strong><span>Review your account details.</span></button>
+    <button class="quick-card" onclick="navigate('settings')"><span class="quick-icon">⚙</span><strong>Settings</strong><span>Manage your account preferences.</span></button>
+  </div>
+</section>
+<section class="card hidden" id="findwork">
+  <div class="page-heading"><div><h2>Find local work</h2><p>Browse jobs posted by customers.</p></div></div>
+  <div class="notice">Job matching and lead responses are being built next. The current list shows open jobs available through the existing marketplace.</div>
+  <input id="jobSearch" placeholder="Search by job, trade or postcode" oninput="filterOpenJobs()">
+  <div id="findWorkResults"></div>
+</section>
+<section class="card hidden" id="postjob">
+  <div class="page-heading"><div><h2>Post a job</h2><p>Tell tradespeople what you need doing.</p></div></div>
+  <p class="small">Posting a job is free. Add a clear description and the job postcode.</p>
+  <input id="newJobTitle" placeholder="What work do you need doing?">
+  <select id="newJobTrade"><option>Plumbing</option><option>Electrical</option><option>Heating</option><option>Roofing</option><option>Carpentry</option><option>Painting and decorating</option><option>Handyman</option><option>Other</option></select>
+  <textarea id="newJobDescription" rows="4" placeholder="Describe the work, any problems and when you need it done"></textarea>
+  <input id="newJobPostcode" placeholder="Job postcode">
+  <button class="gold" onclick="submitNewJob()">Publish job</button>
+</section>
+<section class="card hidden" id="jobs">
+  <div class="page-heading"><div><h2>My jobs</h2><p>Track the jobs you've posted.</p></div><button class="gold" style="width:auto" onclick="navigate('postjob')">＋ New job</button></div>
+  <div id="jobsPageList"></div>
+</section>
+<section class="card hidden" id="messages">
+  <div class="page-heading"><div><h2>Messages</h2><p>Keep conversations about your jobs together.</p></div></div>
+  <div class="notice"><strong>Messaging is on the build list.</strong><br>I'm preparing the secure conversation and quote system before enabling messages, so customer and tradesperson conversations are private and linked to the correct job.</div>
+</section>
+<section class="card hidden" id="profile">
+  <div class="page-heading"><div><h2>My profile</h2><p>Your JK TRADES account details.</p></div></div>
+  <div id="profileDetails"></div>
+</section>
+<section class="card hidden" id="settings">
+  <div class="page-heading"><div><h2>Settings</h2><p>Account and sign-in preferences.</p></div></div>
+  <div class="item"><strong>Account email</strong><p id="settingsEmail"></p></div>
+  <div class="item"><strong>Security</strong><p>Password reset and account security controls will be added before public launch.</p></div>
+  <button class="secondary" onclick="logout()">Log out of JK TRADES</button>
+</section>
 <section class="card hidden" id="account">
 <h2 id="accountTitle">Your account</h2>
 <p id="accountInfo"></p>
@@ -114,16 +218,80 @@ button.secondary{background:#e8edf5;color:var(--navy)}
 <h3>Customer jobs</h3>
 <div id="allJobs"></div>
 </section>
-<p id="message" role="status"></p>
+<p id="message" role="status" aria-live="polite"></p>
+</div>
+<nav class="mobile-nav hidden" id="mobileNav" aria-label="Main navigation">
+  <button class="nav-link active" data-page="home" onclick="navigate('home')"><span class="nav-icon">⌂</span>Home</button>
+  <button class="nav-link" data-page="findwork" onclick="navigate('findwork')"><span class="nav-icon">⌕</span>Find work</button>
+  <button class="nav-link" data-page="postjob" onclick="navigate('postjob')"><span class="nav-icon">＋</span>Post job</button>
+  <button class="nav-link" data-page="messages" onclick="navigate('messages')"><span class="nav-icon">✉</span>Messages</button>
+  <button class="nav-link" data-page="profile" onclick="navigate('profile')"><span class="nav-icon">◉</span>Profile</button>
+</nav>
 </main>
 <script>
 const SUPABASE_URL = "https://zrloxobjeetxtjpevthc.supabase.co";
 const SUPABASE_KEY = "sb_publishable_OvPRFg4iqg39SMWlNnGmVg_kyP0zh3j";
 const db = window.supabase.createClient(SUPABASE_URL,SUPABASE_KEY);
 let currentUser = null;
-let currentDashboard = null;
+let currentDashboard = null;\nlet openJobCache = [];\nlet currentPage = "home";
 
 function msg(t){document.getElementById("message").textContent=t}
+const pages=["home","findwork","postjob","jobs","messages","profile","settings","customer","trades","admin","account","welcome","register","login"];
+function navigate(page){
+  currentPage=page;
+  pages.forEach(id=>{const el=document.getElementById(id);if(el)el.classList.toggle("hidden",id!==page)});
+  document.querySelectorAll("[data-page]").forEach(el=>el.classList.toggle("active",el.dataset.page===page));
+  const signedIn=!!currentUser;
+  document.getElementById("sideNav").classList.toggle("hidden",!signedIn);
+  document.getElementById("mobileNav").classList.toggle("hidden",!signedIn);
+  document.getElementById("sessionNav").classList.toggle("hidden",!signedIn);
+  if(page==="jobs") loadMyJobsPage();
+  if(page==="findwork") loadFindWork();
+  if(page==="profile") loadProfile();
+  if(page==="settings") document.getElementById("settingsEmail").textContent=currentUser?.email||"";
+}
+function filterOpenJobs(){
+ const q=(document.getElementById("jobSearch").value||"").trim().toLowerCase();
+ const results=openJobCache.filter(j=>[j.title,j.trade,j.postcode,j.description].some(v=>(v||"").toLowerCase().includes(q)));
+ renderJobList("findWorkResults",results);
+}
+function renderJobList(target,rows){
+ const el=document.getElementById(target);el.innerHTML="";
+ if(!rows.length){el.innerHTML='<div class="item">No jobs found yet. Check back soon.</div>';return}
+ rows.forEach(j=>el.append(makeItem(j.title,(j.trade||"Trade")+" · "+(j.postcode||"Location not provided")+" · "+(j.status||"open"))));
+}
+async function loadFindWork(){
+ const {data,error}=await db.from("jobs").select("*").eq("status","open").order("created_at",{ascending:false});
+ if(error){document.getElementById("findWorkResults").textContent=error.message;return}
+ openJobCache=data||[];filterOpenJobs();
+}
+async function loadMyJobsPage(){
+ const {data,error}=await db.from("jobs").select("*").eq("customer_id",currentUser.id).order("created_at",{ascending:false});
+ if(error){document.getElementById("jobsPageList").textContent=error.message;return}
+ renderJobList("jobsPageList",data||[]);
+ document.getElementById("statJobs").textContent=(data||[]).length;
+}
+async function submitNewJob(){
+ const title=document.getElementById("newJobTitle").value.trim();
+ const trade=document.getElementById("newJobTrade").value;
+ const description=document.getElementById("newJobDescription").value.trim();
+ const postcode=document.getElementById("newJobPostcode").value.trim();
+ if(!title||!description||!postcode){msg("Please add a job title, description and postcode.");return}
+ const {error}=await db.from("jobs").insert({customer_id:currentUser.id,title,description,trade,postcode});
+ if(error){msg(error.message);return}
+ ["newJobTitle","newJobDescription","newJobPostcode"].forEach(id=>document.getElementById(id).value="");
+ msg("Your job has been published.");
+ await loadMyJobsPage();navigate("jobs");
+}
+async function loadProfile(){
+ const {data}=await db.from("profiles").select("*").eq("id",currentUser.id).maybeSingle();
+ const name=currentUser.user_metadata?.full_name||"JK TRADES member";
+ const role=currentUser.user_metadata?.account_type||"Customer";
+ const rows=[["Name",name],["Email",currentUser.email||""],["Account type",role],["Member since",new Date(currentUser.created_at).toLocaleDateString("en-GB")]];
+ document.getElementById("profileDetails").innerHTML=rows.map(([k,v])=>'<div class="item"><strong>'+k+'</strong><p>'+escapeText(v)+'</p></div>').join("");
+}
+function escapeText(value){return String(value??"").replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]))}
+
 function show(id){
   ["welcome","register","login","account","customer","trades","admin"]
     .forEach(x=>document.getElementById(x).classList.add("hidden"));
@@ -137,7 +305,7 @@ async function goToDashboard(){
   show(destination);
   if(destination==="customer") await loadMyJobs();
   if(destination==="trades") await loadOpenJobs();
-  if(destination==="admin") await loadAdmin();
+  if(destination==="admin") await loadAdmin();\n  navigate("home");
 }
 async function register(){
 const name=regName.value.trim(),email=regEmail.value.trim(),
