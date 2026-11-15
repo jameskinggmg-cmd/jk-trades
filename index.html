@@ -134,6 +134,8 @@ button.secondary{background:#e8edf5;color:var(--navy)}
 <p>Find reliable tradespeople or connect with customers looking for your services.</p>
 <button class="gold" onclick="show('register')">Create an account</button>
 <button class="secondary" onclick="show('login')">Log in</button>
+<div class="item" data-app-link style="margin-top:16px"><strong>Choose your JK TRADES app</strong><p class="small">Each link opens the correct workspace.</p>
+<a href="?app=customer">Customer app</a> · <a href="?app=trades">Tradesperson app</a> · <a href="?app=admin">Private admin app</a></div>
 </section>
 
 <section class="card hidden" id="register">
@@ -317,6 +319,29 @@ button.secondary{background:#e8edf5;color:var(--navy)}
 </nav>
 </main>
 <script>
+const APP_MODE = new URLSearchParams(location.search).get("app") || "all";
+const APP_LABELS = {customer:"Customer",trades:"Tradesperson",admin:"Admin"};
+function applyAppModeUI(){
+ const mode=APP_MODE;
+ if(!["all","customer","trades","admin"].includes(mode)){msg("Invalid app link. Please use one of the official JK TRADES app links.");return}
+ const title=document.querySelector("#welcome h2");
+ const intro=document.querySelector("#welcome p");
+ const registerType=document.getElementById("regType");
+ if(mode!=="all"){
+  if(title)title.textContent="JK TRADES — "+APP_LABELS[mode];
+  if(intro)intro.textContent=mode==="admin"?"Private administrator sign-in. Access is restricted to authorised JK TRADES administrators.":mode==="trades"?"Your professional workspace for skills, qualifications, jobs and customer enquiries.":"Post a job, compare quotes and manage your work with trusted tradespeople.";
+  document.querySelectorAll("[data-app-link]").forEach(el=>el.classList.add("hidden"));
+  if(registerType){
+   registerType.value=mode==="trades"?"tradesperson":"customer";
+   registerType.disabled=true;
+   if(mode==="admin")registerType.closest("section")?.classList.add("hidden");
+  }
+  const create=document.querySelector("#welcome button.gold");
+  if(create)create.classList.toggle("hidden",mode==="admin");
+  const registerHeading=document.querySelector("#register h2");
+  if(registerHeading)registerHeading.textContent="Create your "+(mode==="trades"?"tradesperson":"customer")+" account";
+ }
+}
 const SUPABASE_URL = "https://zrloxobjeetxtjpevthc.supabase.co";
 const SUPABASE_KEY = "sb_publishable_OvPRFg4iqg39SMWlNnGmVg_kyP0zh3j";
 if(!window.supabase?.createClient){throw new Error("JK TRADES could not load its secure sign-in service. Check your internet connection, then refresh.");}
@@ -808,7 +833,8 @@ async function goToDashboard(){
 }
 async function register(){
 const name=regName.value.trim(),email=regEmail.value.trim(),
-password=regPassword.value,type=regType.value;
+password=regPassword.value,type=APP_MODE==="trades"?"tradesperson":APP_MODE==="customer"?"customer":regType.value;
+if(APP_MODE==="admin"){msg("Admin accounts are created and authorised separately. Contact the platform owner.");return}
 if(!name||!email||!password){msg("Please complete all fields.");return}
 if(name.length>100 || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)){
  msg("Enter a valid name and email address.");return;
@@ -855,7 +881,11 @@ async function logout(){
 async function loadAccount(user){
 currentUser=user;
 const {data:admin}=await db.from("admin_users").select("user_id").eq("user_id",user.id).maybeSingle();
-if(admin){
+const accountType=user.user_metadata?.account_type;
+if(APP_MODE==="admin"&&!admin){currentUser=null;await db.auth.signOut();msg("This private app is restricted to authorised administrators.");return}
+if(APP_MODE==="customer"&&(admin||accountType!=="customer")){currentUser=null;await db.auth.signOut();msg("Please use the app that matches your account type.");return}
+if(APP_MODE==="trades"&&(admin||accountType!=="tradesperson")){currentUser=null;await db.auth.signOut();msg("Please use the app that matches your account type.");return}
+if(APP_MODE==="all"&&admin){
   currentDashboard="admin";
   show("admin");
   await loadAdmin();
@@ -869,6 +899,7 @@ if(app || type==="tradesperson"){
   navigate("trades");
   return;
 }
+if(APP_MODE==="admin"){currentUser=null;await db.auth.signOut();msg("Admin access only.");return}
 currentDashboard="customer";
 await loadMyJobs();
 navigate("home");
@@ -1074,6 +1105,7 @@ db.auth.onAuthStateChange((event,session)=>{
     updateNavigationForRole();
   }
 });
+applyAppModeUI();
 populateTradeSelectors();
 (async()=>{
 const {data}=await db.auth.getSession();
