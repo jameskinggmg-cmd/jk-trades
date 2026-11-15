@@ -401,7 +401,7 @@ async function loadFindWork(){
  openJobCache=data||[];filterOpenJobs();
 }
 async function loadMyJobsPage(){
- const {data,error}=await db.from("jobs").select("*").eq("customer_id",currentUser.id).order("created_at",{ascending:false});
+ const {data,error}=await db.from("jobs").select("*").eq("customer_id",currentUser.id).neq("status","removed").order("created_at",{ascending:false});
  if(error){document.getElementById("jobsPageList").textContent=error.message;return}
  const jobs=data||[];
  document.getElementById("statJobs").textContent=jobs.length;
