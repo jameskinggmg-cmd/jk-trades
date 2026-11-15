@@ -419,6 +419,11 @@ function renderCustomerJobCards(host,jobs,quotes){
   const card=makeItem(job.title,(job.trade||"Trade")+" · "+(job.postcode||"Location not provided")+" · "+(job.status||"open"));
   const desc=document.createElement("p");desc.textContent=job.description||"";card.append(desc);
   void appendJobPhotoGallery(card,job.id);
+  if(job.status==="open"){
+   const cancel=document.createElement("button");cancel.className="secondary";cancel.textContent="Cancel job";cancel.onclick=()=>cancelCustomerJob(job.id);card.append(cancel);
+  }else if(job.status==="cancelled"){
+   const note=document.createElement("p");note.className="small";note.textContent="This job has been cancelled and is no longer shown to tradespeople.";card.append(note);
+  }
   const jobQuotes=quotes.filter(q=>q.job_id===job.id);
   const heading=document.createElement("h3");heading.textContent="Quotes received ("+jobQuotes.length+")";card.append(heading);
   if(!jobQuotes.length){const empty=document.createElement("p");empty.textContent="No quotes yet. Approved tradespeople can send offers for this job.";card.append(empty)}
@@ -435,6 +440,13 @@ function renderCustomerJobCards(host,jobs,quotes){
   });
   host.append(card);
  });
+}
+async function cancelCustomerJob(jobId){
+ if(!confirm("Cancel this job? It will be removed from the open jobs list for tradespeople. You can still see its details and quotes here."))return;
+ const {error}=await db.rpc("cancel_customer_job",{p_job_id:jobId});
+ if(error){msg(error.message||"The job could not be cancelled.");return}
+ msg("Job cancelled. It is no longer available to tradespeople.");
+ await loadMyJobsPage();
 }
 async function acceptJobQuote(quoteId){
  if(!confirm("Accept this quote? Other pending quotes for the same job will be declined."))return;
