@@ -444,7 +444,7 @@ function renderCustomerJobCards(host,jobs,quotes){
   host.append(card);
  });
 }
-function openCustomerJobModal(job,quotes){
+async function openCustomerJobModal(job,quotes){
  const body=document.getElementById("jobModalBody");body.innerHTML="";
  const addDetail=(label,value)=>{const p=document.createElement("p");const strong=document.createElement("strong");strong.textContent=label+": ";p.append(strong,document.createTextNode(value||"Not provided"));body.append(p)};
  addDetail("Trade",job.trade);addDetail("Location",job.postcode);addDetail("Status",job.status);addDetail("Description",job.description);
@@ -489,7 +489,7 @@ function renderCustomerJobEdit(job){
 }
 async function loadCustomerJobModal(jobId){
  const {data:job,error}=await db.from("jobs").select("*").eq("id",jobId).eq("customer_id",currentUser.id).single();if(error){msg(error.message);closeCustomerJobModal();return}
- const {data:quotes}=await db.from("quotes").select("id,job_id,amount_pence,status").eq("job_id",jobId);openCustomerJobModal(job,quotes||[]);
+ const {data:quotes}=await db.from("quotes").select("id,job_id,tradesperson_id,amount_pence,status").eq("job_id",jobId);await openCustomerJobModal(job,quotes||[]);
 }
 async function removeCustomerJob(jobId){
  if(!confirm("Remove this job from your active list? It will be marked as removed, not permanently erased."))return;
