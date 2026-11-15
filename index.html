@@ -295,7 +295,6 @@ async function submitNewJob(){
  await loadMyJobsPage();navigate("jobs");
 }
 async function loadProfile(){
- const {data}=await db.from("profiles").select("*").eq("id",currentUser.id).maybeSingle();
  const name=currentUser.user_metadata?.full_name||"JK TRADES member";
  const role=currentUser.user_metadata?.account_type||"Customer";
  const rows=[["Name",name],["Email",currentUser.email||""],["Account type",role],["Member since",new Date(currentUser.created_at).toLocaleDateString("en-GB")]];
@@ -312,11 +311,7 @@ function show(id){
 }
 async function goToDashboard(){
   if(!currentUser || !currentDashboard) return;
-  const destination=currentDashboard;
-  show(destination);
-  if(destination==="customer") await loadMyJobs();
-  if(destination==="trades") await loadOpenJobs();
-  if(destination==="admin") await loadAdmin();
+  if(currentDashboard==="admin"){show("admin");await loadAdmin();return}
   navigate("home");
 }
 async function register(){
@@ -339,8 +334,7 @@ async function logout(){
   if(error){msg(error.message);return}
   currentUser=null;
   currentDashboard=null;
-  document.getElementById("sessionNav").classList.add("hidden");
-  show("welcome");
+  navigate("welcome");
   msg("You have logged out.");
 }
 async function loadAccount(user){
@@ -361,9 +355,9 @@ if(app || type==="tradesperson"){
   await loadOpenJobs();
 }else{
   currentDashboard="customer";
-  show("customer");
   await loadMyJobs();
 }
+ navigate("home");
 }
 async function postJob(){
 if(!currentUser)return;
