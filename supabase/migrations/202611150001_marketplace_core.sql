@@ -350,8 +350,8 @@ revoke insert on public.reviews from authenticated;
 
 grant select, insert, update on public.business_profiles to authenticated;
 grant select, insert, delete on public.job_photos to authenticated;
-grant select, insert, update on public.quotes to authenticated;
+grant select, insert on public.quotes to authenticated;
 grant select, insert on public.conversations to authenticated;
 grant select, insert on public.messages to authenticated;
 grant select on public.notifications to authenticated;
-grant select, insert on public.reviews to authenticated;
+grant select on public.reviews to authenticated;
