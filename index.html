@@ -135,7 +135,9 @@ button.secondary{background:#e8edf5;color:var(--navy)}
 <h2>Create your account</h2>
 <input id="regName" placeholder="Your full name">
 <input id="regEmail" type="email" placeholder="Email address">
-<input id="regPassword" type="password" placeholder="Create password">
+<label class="small" for="regPassword">Create password (at least 12 characters)</label>
+<input id="regPassword" type="password" placeholder="Choose a long, unique password" minlength="12" autocomplete="new-password" required aria-describedby="passwordHelp">
+<p id="passwordHelp" class="small">Use 12 or more characters. A longer, unique passphrase is easier to remember. Don’t reuse a password from another website.</p>
 <select id="regType">
 <option value="customer">Customer</option>
 <option value="tradesperson">Tradesperson</option>
@@ -218,7 +220,7 @@ button.secondary{background:#e8edf5;color:var(--navy)}
 <section class="card hidden" id="settings">
   <div class="page-heading"><div><h2>Settings</h2><p>Account and sign-in preferences.</p></div></div>
   <div class="item"><strong>Account email</strong><p id="settingsEmail"></p></div>
-  <div class="item"><strong>Security</strong><p>Password reset and account security controls will be added before public launch.</p></div>
+  <div class="item"><strong>Security</strong><p>Use a long, unique password of at least 12 characters. This app-side rule helps discourage weak passwords, but it does not check passwords against known data breaches. Supabase’s built-in leaked-password protection still needs to be enabled in the project Auth settings when available.</p></div>
   <button class="secondary" onclick="logout()">Log out of JK TRADES</button>
 </section>
 <section class="card hidden" id="account">
@@ -582,7 +584,7 @@ if(!name||!email||!password){msg("Please complete all fields.");return}
 if(name.length>100 || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)){
  msg("Enter a valid name and email address.");return;
 }
-if(password.length<12){
+if([...password].length<12){
  msg("Use a password with at least 12 characters.");return;
 }
 if(!["customer","tradesperson"].includes(type)){
