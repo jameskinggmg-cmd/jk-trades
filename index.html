@@ -449,6 +449,22 @@ function openCustomerJobModal(job,quotes){
  const quoteList=(quotes||[]).filter(q=>q.job_id===job.id);
  const quoteHeading=document.createElement("h3");quoteHeading.textContent="Quotes received ("+quoteList.length+")";body.append(quoteHeading);
  quoteList.forEach(q=>{const p=document.createElement("p");p.textContent=new Intl.NumberFormat("en-GB",{style:"currency",currency:"GBP"}).format(q.amount_pence/100)+" · "+(q.status||"");body.append(p)});
+ const acceptedQuote=quoteList.find(q=>q.status==="accepted");
+ if(acceptedQuote){
+  const addressNote=document.createElement("p");addressNote.className="small";addressNote.textContent="Your full home address stays private unless you choose to share it with the tradesperson whose quote you accepted.";body.append(addressNote);
+  const share=document.createElement("button");share.className="gold";share.textContent="Share my home address with this tradesperson";
+  share.onclick=async()=>{
+   if(!confirm("Share your saved home address with the tradesperson whose quote you accepted for this job?"))return;
+   share.disabled=true;
+   const {error}=await db.from("job_address_shares").insert({job_id:job.id,customer_id:currentUser.id,tradesperson_id:acceptedQuote.tradesperson_id});
+   if(error && error.code!=="23505"){msg("Your address was not shared: "+error.message);share.disabled=false;return}
+   share.textContent="Home address shared with accepted tradesperson";
+   msg("Your home address has been shared for this job only.");
+  };
+  const {data:shareRecord}=await db.from("job_address_shares").select("job_id").eq("job_id",job.id).maybeSingle();
+  if(shareRecord){share.textContent="Home address already shared for this job";share.disabled=true}
+  body.append(share);
+ }
  void appendJobPhotoGallery(body,job.id);
  if(job.status==="open"){
   const edit=document.createElement("button");edit.className="gold";edit.textContent="Edit job";edit.onclick=()=>renderCustomerJobEdit(job);body.append(edit);
