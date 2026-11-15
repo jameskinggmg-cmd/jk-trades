@@ -307,11 +307,13 @@ button.secondary{background:#e8edf5;color:var(--navy)}
  <button type="button" class="admin-tab" role="tab" aria-selected="false" aria-controls="adminTabCredentials" onclick="showAdminTab('adminTabCredentials',this)">Qualifications</button>
  <button type="button" class="admin-tab" role="tab" aria-selected="false" aria-controls="adminTabActiveJobs" onclick="showAdminTab('adminTabActiveJobs',this)">Active jobs</button>
  <button type="button" class="admin-tab" role="tab" aria-selected="false" aria-controls="adminTabCancelledJobs" onclick="showAdminTab('adminTabCancelledJobs',this)">Cancelled jobs</button>
+ <button type="button" class="admin-tab" role="tab" aria-selected="false" aria-controls="adminTabCustomers" onclick="showAdminTab('adminTabCustomers',this)">Customer users</button>
 </div>
 <div id="adminTabApplications" class="admin-tab-panel" role="tabpanel"><h3>Tradesperson applications</h3><div id="applications"></div></div>
 <div id="adminTabCredentials" class="admin-tab-panel hidden" role="tabpanel"><h3>Qualification verification queue</h3><div id="credentialReviewQueue"></div></div>
 <div id="adminTabActiveJobs" class="admin-tab-panel hidden" role="tabpanel"><h3>Active customer jobs</h3><div id="allJobs"></div></div>
 <div id="adminTabCancelledJobs" class="admin-tab-panel hidden" role="tabpanel"><h3>Cancelled jobs</h3><p class="small">Review the original advert, see who posted it, edit the details, or put it back live.</p><div id="cancelledJobs"></div></div>
+<div id="adminTabCustomers" class="admin-tab-panel hidden" role="tabpanel"><h3>Customer user accounts</h3><p class="small">Customer email addresses and whether each email address has been confirmed.</p><div id="customerUsers"></div></div>
 </section>
 <div id="adminJobModal" class="job-modal-backdrop hidden" role="dialog" aria-modal="true" aria-labelledby="adminJobModalTitle">
  <section class="job-modal">
@@ -1121,6 +1123,7 @@ function showAdminTab(panelId,button){
  });
 }
 async function loadAdmin(){
+ await loadCustomerUsers();
  await loadCredentialReviewQueue();
  const {data:apps,error}=await db.from("trade_applications").select("*").order("created_at",{ascending:false});
  applications.innerHTML="";
@@ -1140,6 +1143,28 @@ async function loadAdmin(){
  if(jobError){allJobs.textContent=jobError.message;return}
  (jobs||[]).forEach(j=>allJobs.append(makeItem(j.title,j.trade+" · "+j.postcode+" · "+j.status)));
  await loadCancelledAdminJobs();
+}
+
+async function loadCustomerUsers(){
+ const host=document.getElementById("customerUsers");
+ if(!host)return;
+ host.innerHTML="<p class='small'>Loading customer accounts…</p>";
+ const {data,error}=await db.rpc("admin_list_customer_users");
+ host.innerHTML="";
+ if(error){host.textContent="Could not load customer accounts: "+error.message;return}
+ if(!data?.length){host.textContent="No customer accounts found.";return}
+ data.forEach(user=>{
+  const card=document.createElement("article");card.className="item";
+  const name=document.createElement("strong");name.textContent=user.full_name||"Customer name not supplied";card.append(name);
+  const email=document.createElement("p");email.textContent=user.email||"Email unavailable";card.append(email);
+  const status=document.createElement("p");status.className="small";
+  status.textContent=user.email_confirmed_at?"Email confirmed":"Awaiting email confirmation";
+  card.append(status);
+  const joined=document.createElement("p");joined.className="small";
+  joined.textContent="Registered: "+new Date(user.created_at).toLocaleString("en-GB");
+  card.append(joined);
+  host.append(card);
+ });
 }
 
 async function loadCancelledAdminJobs(){
