@@ -227,7 +227,7 @@ returns void
 language plpgsql
 security definer
 set search_path = public, pg_temp
-as $
+as $$
 declare
   v_job_id uuid;
   v_customer_id uuid;
@@ -256,7 +256,7 @@ begin
          updated_at = now()
    where job_id = v_job_id and status = 'sent';
 end;
-$;
+$$;
 
 -- A tradesperson may withdraw only their own quote while it is still awaiting a
 -- customer decision. Amount, job and owner fields are never client-editable.
@@ -265,7 +265,7 @@ returns void
 language plpgsql
 security definer
 set search_path = public, pg_temp
-as $
+as $$
 begin
   if auth.uid() is null then
     raise exception 'Sign in required';
@@ -281,7 +281,7 @@ begin
     raise exception 'Quote not found or no longer withdrawable';
   end if;
 end;
-$;
+$$;
 
 -- Read receipts are updated through narrowly scoped functions rather than a
 -- table-wide UPDATE grant that could expose participant or content fields.
@@ -290,7 +290,7 @@ returns void
 language plpgsql
 security definer
 set search_path = public, pg_temp
-as $
+as $$
 begin
   if auth.uid() is null then
     raise exception 'Sign in required';
@@ -310,14 +310,14 @@ begin
     raise exception 'Message not found';
   end if;
 end;
-$;
+$$;
 
 create or replace function public.mark_notification_read(p_notification_id uuid)
 returns void
 language plpgsql
 security definer
 set search_path = public, pg_temp
-as $
+as $$
 begin
   if auth.uid() is null then
     raise exception 'Sign in required';
@@ -331,7 +331,7 @@ begin
     raise exception 'Notification not found';
   end if;
 end;
-$;
+$$;
 
 revoke all on function public.accept_job_quote(uuid) from public;
 revoke all on function public.withdraw_job_quote(uuid) from public;
