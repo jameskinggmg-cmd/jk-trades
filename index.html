@@ -385,14 +385,14 @@ async function appendJobPhotoGallery(card,jobId){
 }
 function filterOpenJobs(){
  const q=(document.getElementById("jobSearch").value||"").trim().toLowerCase();
- const results=openJobCache.filter(j=>[j.title,j.trade,j.postcode,j.description].some(v=>(v||"").toLowerCase().includes(q)));
+ const results=openJobCache.filter(j=>[j.title,j.trade,j.service,j.postcode,j.description].some(v=>(v||"").toLowerCase().includes(q)));
  renderJobList("findWorkResults",results);
 }
 function renderJobList(target,rows){
  const el=document.getElementById(target);el.innerHTML="";
  if(!rows.length){el.innerHTML='<div class="item">No jobs found yet. Check back soon.</div>';return}
  rows.forEach(j=>{
-  const card=makeItem(j.title,(j.trade||"Trade")+" · "+(j.postcode||"Location not provided")+" · "+(j.status||"open"));
+  const card=makeItem(j.title,(j.trade||"Trade")+(j.service?" — "+j.service:"")+" · "+(j.postcode||"Location not provided")+" · "+(j.status||"open"));
   const desc=document.createElement("p");desc.textContent=j.description||"";card.append(desc);
   void appendJobPhotoGallery(card,j.id);
   if(target==="findWorkResults" && currentDashboard==="trades" && currentTradeStatus==="approved"){
@@ -792,7 +792,7 @@ async function loadMyJobs(){
 const {data,error}=await db.from("jobs").select("*").eq("customer_id",currentUser.id).order("created_at",{ascending:false});
 myJobs.innerHTML="";
 if(error){myJobs.textContent=error.message;return}
-(data||[]).forEach(j=>myJobs.append(makeItem(j.title,j.trade+" · "+j.postcode+" · "+j.status)));
+(data||[]).forEach(j=>myJobs.append(makeItem(j.title,j.trade+(j.service?" — "+j.service:"")+" · "+j.postcode+" · "+j.status)));
 }
 async function applyTrade(){
 if(!currentUser){msg("Please sign in before applying.");return}
@@ -856,7 +856,7 @@ async function loadOpenJobs(){
 const {data,error}=await db.from("jobs").select("*").eq("status","open").order("created_at",{ascending:false});
 openJobs.innerHTML="";
 if(error){openJobs.textContent=error.message;return}
-(data||[]).forEach(j=>openJobs.append(makeItem(j.title,j.trade+" · "+j.postcode+" · "+j.description)));
+(data||[]).forEach(j=>openJobs.append(makeItem(j.title,j.trade+(j.service?" — "+j.service:"")+" · "+j.postcode+" · "+j.description)));
 }
 function makeItem(title,detail){
 const d=document.createElement("div");d.className="item";
@@ -869,7 +869,7 @@ const {data:apps,error}=await db.from("trade_applications").select("*").order("c
 applications.innerHTML="";
 if(error){applications.textContent=error.message;return}
 (apps||[]).forEach(a=>{
-const d=makeItem(a.business_name,a.trade+" · "+a.postcode+" · "+a.status);
+const d=makeItem(a.business_name,a.trade+(a.service?" — "+a.service:"")+" · "+a.postcode+" · "+a.status);
 if(a.status==="pending"){
 ["approved","rejected"].forEach(status=>{
 const b=document.createElement("button");b.textContent=status;
