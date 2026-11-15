@@ -885,7 +885,7 @@ const accountType=user.user_metadata?.account_type;
 if(APP_MODE==="admin"&&!admin){currentUser=null;await db.auth.signOut();msg("This private app is restricted to authorised administrators.");return}
 if(APP_MODE==="customer"&&(admin||accountType!=="customer")){currentUser=null;await db.auth.signOut();msg("Please use the app that matches your account type.");return}
 if(APP_MODE==="trades"&&(admin||accountType!=="tradesperson")){currentUser=null;await db.auth.signOut();msg("Please use the app that matches your account type.");return}
-if(APP_MODE==="all"&&admin){
+if(admin){
   currentDashboard="admin";
   show("admin");
   await loadAdmin();
