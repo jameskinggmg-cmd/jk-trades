@@ -213,6 +213,141 @@ for insert to authenticated with check (
   and exists (select 1 from public.trade_applications ta where ta.user_id = reviews.tradesperson_id and ta.status = 'approved')
 );
 
+
+-- Restrict quote state changes to validated RPCs. Direct client updates would let a
+-- tradesperson change quote amounts or move a quote between jobs.
+drop policy if exists "quote owner update" on public.quotes;
+revoke update on public.quotes from authenticated;
+grant select, insert on public.quotes to authenticated;
+
+-- Customer accepts one quote. The function checks ownership and only permits a
+-- still-pending quote; competing quotes on that same job are declined atomically.
+create or replace function public.accept_job_quote(p_quote_id uuid)
+returns void
+language plpgsql
+security definer
+set search_path = public, pg_temp
+as $
+declare
+  v_job_id uuid;
+  v_customer_id uuid;
+  v_status text;
+begin
+  if auth.uid() is null then
+    raise exception 'Sign in required';
+  end if;
+
+  select q.job_id, j.customer_id, q.status
+    into v_job_id, v_customer_id, v_status
+  from public.quotes q
+  join public.jobs j on j.id = q.job_id
+  where q.id = p_quote_id
+  for update of q, j;
+
+  if not found or v_customer_id <> auth.uid() then
+    raise exception 'Quote not found';
+  end if;
+  if v_status <> 'sent' then
+    raise exception 'This quote is no longer available';
+  end if;
+
+  update public.quotes
+     set status = case when id = p_quote_id then 'accepted' else 'declined' end,
+         updated_at = now()
+   where job_id = v_job_id and status = 'sent';
+end;
+$;
+
+-- A tradesperson may withdraw only their own quote while it is still awaiting a
+-- customer decision. Amount, job and owner fields are never client-editable.
+create or replace function public.withdraw_job_quote(p_quote_id uuid)
+returns void
+language plpgsql
+security definer
+set search_path = public, pg_temp
+as $
+begin
+  if auth.uid() is null then
+    raise exception 'Sign in required';
+  end if;
+
+  update public.quotes
+     set status = 'withdrawn', updated_at = now()
+   where id = p_quote_id
+     and tradesperson_id = auth.uid()
+     and status = 'sent';
+
+  if not found then
+    raise exception 'Quote not found or no longer withdrawable';
+  end if;
+end;
+$;
+
+-- Read receipts are updated through narrowly scoped functions rather than a
+-- table-wide UPDATE grant that could expose participant or content fields.
+create or replace function public.mark_conversation_message_read(p_message_id uuid)
+returns void
+language plpgsql
+security definer
+set search_path = public, pg_temp
+as $
+begin
+  if auth.uid() is null then
+    raise exception 'Sign in required';
+  end if;
+
+  update public.messages m
+     set read_at = coalesce(m.read_at, now())
+   where m.id = p_message_id
+     and m.sender_id <> auth.uid()
+     and exists (
+       select 1 from public.conversations c
+       where c.id = m.conversation_id
+         and (c.customer_id = auth.uid() or c.tradesperson_id = auth.uid())
+     );
+
+  if not found then
+    raise exception 'Message not found';
+  end if;
+end;
+$;
+
+create or replace function public.mark_notification_read(p_notification_id uuid)
+returns void
+language plpgsql
+security definer
+set search_path = public, pg_temp
+as $
+begin
+  if auth.uid() is null then
+    raise exception 'Sign in required';
+  end if;
+
+  update public.notifications
+     set read_at = coalesce(read_at, now())
+   where id = p_notification_id and user_id = auth.uid();
+
+  if not found then
+    raise exception 'Notification not found';
+  end if;
+end;
+$;
+
+revoke all on function public.accept_job_quote(uuid) from public;
+revoke all on function public.withdraw_job_quote(uuid) from public;
+revoke all on function public.mark_conversation_message_read(uuid) from public;
+revoke all on function public.mark_notification_read(uuid) from public;
+grant execute on function public.accept_job_quote(uuid) to authenticated;
+grant execute on function public.withdraw_job_quote(uuid) to authenticated;
+grant execute on function public.mark_conversation_message_read(uuid) to authenticated;
+grant execute on function public.mark_notification_read(uuid) to authenticated;
+
+-- The current jobs table lifecycle values have not yet been verified. Keep review
+-- creation disabled until the completed-job status and job-to-trade assignment
+-- rules are confirmed against the live schema.
+drop policy if exists "customer review completed job" on public.reviews;
+revoke insert on public.reviews from authenticated;
+
 grant select, insert, update on public.business_profiles to authenticated;
 grant select, insert, delete on public.job_photos to authenticated;
 grant select, insert, update on public.quotes to authenticated;
