@@ -113,6 +113,7 @@ button.secondary{background:#e8edf5;color:var(--navy)}
 }
  .beta-notice{max-width:1180px;margin:14px auto 0;padding:11px 16px;border:1px solid #d5ad52;border-radius:12px;background:#fff9e9;color:#5b481b;font-size:13px;line-height:1.45}
 .beta-notice strong{color:#101d35}
+.job-open-card{cursor:pointer;transition:border-color .15s,box-shadow .15s}.job-open-card:hover{border-color:var(--gold);box-shadow:0 5px 18px #101d3512}.job-open-card:focus-visible{outline:3px solid #d5ad5280;outline-offset:2px}.job-modal-backdrop{position:fixed;inset:0;z-index:100;background:#0b1528a8;display:flex;align-items:center;justify-content:center;padding:16px}.job-modal{background:#fff;width:min(680px,100%);max-height:90vh;overflow:auto;border-radius:18px;padding:22px;box-shadow:0 18px 60px #0004}.job-modal-head{display:flex;justify-content:space-between;align-items:center;gap:12px}.job-modal-head h2{margin:0}.job-modal-close{width:auto;margin:0;padding:8px 13px}.job-modal-actions{display:flex;gap:8px;flex-wrap:wrap;margin-top:14px}.job-modal-actions button{width:auto;flex:1;min-width:110px}.job-modal label{display:block;font-size:13px;font-weight:700;margin-top:10px}.job-modal input,.job-modal textarea,.job-modal select{margin:5px 0}.job-modal .danger{background:#9f2d35;color:#fff}@media(max-width:480px){.job-modal{padding:17px}.job-modal-actions button{min-width:100%}}
 </style>
 </head>
 <body>
@@ -271,6 +272,7 @@ button.secondary{background:#e8edf5;color:var(--navy)}
 <h3>Customer jobs</h3>
 <div id="allJobs"></div>
 </section>
+<div id="customerJobModal" class="job-modal-backdrop hidden" role="dialog" aria-modal="true" aria-labelledby="jobModalTitle" onclick="if(event.target===this)closeCustomerJobModal()"><section class="job-modal"><div class="job-modal-head"><h2 id="jobModalTitle">Job details</h2><button class="secondary job-modal-close" type="button" onclick="closeCustomerJobModal()">Close ✕</button></div><div id="jobModalBody"></div></section></div>
 <p id="message" role="status" aria-live="polite"></p>
 </div>
 </div>
@@ -417,14 +419,13 @@ async function loadMyJobsPage(){
 function renderCustomerJobCards(host,jobs,quotes){
  jobs.forEach(job=>{
   const card=makeItem(job.title,(job.trade||"Trade")+" · "+(job.postcode||"Location not provided")+" · "+(job.status||"open"));
+  card.classList.add("job-open-card");card.tabIndex=0;card.setAttribute("role","button");card.setAttribute("aria-label","Open full details for "+job.title);
+  card.onclick=(event)=>{if(event.target.closest("button,a,input,textarea,select"))return;openCustomerJobModal(job,quotes)};
+  card.onkeydown=(event)=>{if(event.key==="Enter"||event.key===" "){event.preventDefault();openCustomerJobModal(job,quotes)}};
   const desc=document.createElement("p");desc.textContent=job.description||"";card.append(desc);
-  void appendJobPhotoGallery(card,job.id);
-  if(job.status==="open"){
-   const cancel=document.createElement("button");cancel.className="secondary";cancel.textContent="Cancel job";cancel.onclick=()=>cancelCustomerJob(job.id);card.append(cancel);
-  }else if(job.status==="cancelled"){
-   const note=document.createElement("p");note.className="small";note.textContent="This job has been cancelled and is no longer shown to tradespeople.";card.append(note);
-  }
+  const openHint=document.createElement("p");openHint.className="small";openHint.textContent="Tap to open full job details and actions";card.append(openHint);
   const jobQuotes=quotes.filter(q=>q.job_id===job.id);
+  void appendJobPhotoGallery(card,job.id);
   const heading=document.createElement("h3");heading.textContent="Quotes received ("+jobQuotes.length+")";card.append(heading);
   if(!jobQuotes.length){const empty=document.createElement("p");empty.textContent="No quotes yet. Approved tradespeople can send offers for this job.";card.append(empty)}
   jobQuotes.forEach(q=>{
@@ -440,6 +441,42 @@ function renderCustomerJobCards(host,jobs,quotes){
   });
   host.append(card);
  });
+}
+function openCustomerJobModal(job,quotes){
+ const body=document.getElementById("jobModalBody");body.innerHTML="";
+ const addDetail=(label,value)=>{const p=document.createElement("p");const strong=document.createElement("strong");strong.textContent=label+": ";p.append(strong,document.createTextNode(value||"Not provided"));body.append(p)};
+ addDetail("Trade",job.trade);addDetail("Location",job.postcode);addDetail("Status",job.status);addDetail("Description",job.description);
+ const quoteList=(quotes||[]).filter(q=>q.job_id===job.id);
+ const quoteHeading=document.createElement("h3");quoteHeading.textContent="Quotes received ("+quoteList.length+")";body.append(quoteHeading);
+ quoteList.forEach(q=>{const p=document.createElement("p");p.textContent=new Intl.NumberFormat("en-GB",{style:"currency",currency:"GBP"}).format(q.amount_pence/100)+" · "+(q.status||"");body.append(p)});
+ void appendJobPhotoGallery(body,job.id);
+ if(job.status==="open"){
+  const edit=document.createElement("button");edit.className="gold";edit.textContent="Edit job";edit.onclick=()=>renderCustomerJobEdit(job);body.append(edit);
+  const actions=document.createElement("div");actions.className="job-modal-actions";
+  const cancel=document.createElement("button");cancel.className="secondary";cancel.textContent="Cancel job";cancel.onclick=()=>cancelCustomerJob(job.id);
+  const remove=document.createElement("button");remove.className="danger";remove.textContent="Remove job";remove.onclick=()=>removeCustomerJob(job.id);
+  actions.append(cancel,remove);body.append(actions);
+ }else{
+  const note=document.createElement("p");note.className="small";note.textContent="This job is no longer open for tradespeople.";body.append(note);
+ }
+ document.getElementById("customerJobModal").classList.remove("hidden");
+}
+function closeCustomerJobModal(){document.getElementById("customerJobModal").classList.add("hidden")}
+function renderCustomerJobEdit(job){
+ const body=document.getElementById("jobModalBody");body.innerHTML="";
+ const form=document.createElement("form");form.innerHTML='<label for="editJobTitle">Job title</label><input id="editJobTitle" required maxlength="120"><label for="editJobTrade">Trade</label><select id="editJobTrade"><option>Plumbing</option><option>Electrical</option><option>Heating</option><option>Roofing</option><option>Carpentry</option><option>Painting and decorating</option><option>Handyman</option><option>Other</option></select><label for="editJobDescription">Description</label><textarea id="editJobDescription" rows="5" required></textarea><label for="editJobPostcode">Postcode</label><input id="editJobPostcode" required maxlength="16"><div class="job-modal-actions"><button class="gold" type="submit">Save changes</button><button class="secondary" type="button" id="editJobBack">Back</button></div>';
+ body.append(form);form.querySelector("#editJobTitle").value=job.title||"";form.querySelector("#editJobTrade").value=job.trade||"Other";form.querySelector("#editJobDescription").value=job.description||"";form.querySelector("#editJobPostcode").value=job.postcode||"";
+ form.querySelector("#editJobBack").onclick=()=>loadCustomerJobModal(job.id);
+ form.onsubmit=async(event)=>{event.preventDefault();const {error}=await db.from("jobs").update({title:form.querySelector("#editJobTitle").value.trim(),trade:form.querySelector("#editJobTrade").value,description:form.querySelector("#editJobDescription").value.trim(),postcode:form.querySelector("#editJobPostcode").value.trim()}).eq("id",job.id).eq("customer_id",currentUser.id).eq("status","open");if(error){msg(error.message);return}msg("Job details updated.");await loadMyJobsPage();await loadCustomerJobModal(job.id)};
+}
+async function loadCustomerJobModal(jobId){
+ const {data:job,error}=await db.from("jobs").select("*").eq("id",jobId).eq("customer_id",currentUser.id).single();if(error){msg(error.message);closeCustomerJobModal();return}
+ const {data:quotes}=await db.from("quotes").select("id,job_id,amount_pence,status").eq("job_id",jobId);openCustomerJobModal(job,quotes||[]);
+}
+async function removeCustomerJob(jobId){
+ if(!confirm("Remove this job from your active list? It will be marked as removed, not permanently erased."))return;
+ const {error}=await db.from("jobs").update({status:"removed"}).eq("id",jobId).eq("customer_id",currentUser.id).eq("status","open");
+ if(error){msg(error.message);return}msg("Job removed from your active list.");closeCustomerJobModal();await loadMyJobsPage();
 }
 async function cancelCustomerJob(jobId){
  if(!confirm("Cancel this job? It will be removed from the open jobs list for tradespeople. You can still see its details and quotes here."))return;
