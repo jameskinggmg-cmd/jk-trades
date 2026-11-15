@@ -172,11 +172,6 @@ for insert to authenticated with check (
   and exists (select 1 from public.jobs j where j.id = conversations.job_id and j.customer_id = auth.uid())
   and exists (select 1 from public.trade_applications ta where ta.user_id = conversations.tradesperson_id and ta.status = 'approved')
 );
-drop policy if exists "conversation participant update" on public.conversations;
-create policy "conversation participant update" on public.conversations
-for update to authenticated using (customer_id = auth.uid() or tradesperson_id = auth.uid())
-with check (customer_id = auth.uid() or tradesperson_id = auth.uid());
-
 -- Messages: participants only; sender must be the signed-in user.
 drop policy if exists "message participant read" on public.messages;
 create policy "message participant read" on public.messages
@@ -197,31 +192,10 @@ for insert to authenticated with check (
       and (c.customer_id = auth.uid() or c.tradesperson_id = auth.uid())
   )
 );
-drop policy if exists "recipient mark message read" on public.messages;
-create policy "recipient mark message read" on public.messages
-for update to authenticated using (
-  exists (
-    select 1 from public.conversations c
-    where c.id = messages.conversation_id
-      and (c.customer_id = auth.uid() or c.tradesperson_id = auth.uid())
-      and messages.sender_id <> auth.uid()
-  )
-) with check (
-  exists (
-    select 1 from public.conversations c
-    where c.id = messages.conversation_id
-      and (c.customer_id = auth.uid() or c.tradesperson_id = auth.uid())
-  )
-);
-
 -- Notifications: each user can only read/update their own notifications.
 drop policy if exists "notification owner read" on public.notifications;
 create policy "notification owner read" on public.notifications
 for select to authenticated using (user_id = auth.uid());
-drop policy if exists "notification owner update" on public.notifications;
-create policy "notification owner update" on public.notifications
-for update to authenticated using (user_id = auth.uid()) with check (user_id = auth.uid());
-
 -- Reviews: visible to all signed-in users; only the customer who owns the job can add one.
 drop policy if exists "reviews visible" on public.reviews;
 create policy "reviews visible" on public.reviews
@@ -242,7 +216,7 @@ for insert to authenticated with check (
 grant select, insert, update on public.business_profiles to authenticated;
 grant select, insert, delete on public.job_photos to authenticated;
 grant select, insert, update on public.quotes to authenticated;
-grant select, insert, update on public.conversations to authenticated;
-grant select, insert, update on public.messages to authenticated;
-grant select, update on public.notifications to authenticated;
+grant select, insert on public.conversations to authenticated;
+grant select, insert on public.messages to authenticated;
+grant select on public.notifications to authenticated;
 grant select, insert on public.reviews to authenticated;
