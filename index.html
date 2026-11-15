@@ -86,6 +86,7 @@ main{max-width:1180px;margin:26px auto;padding:0 18px}
   .side-nav{display:none!important}
   .mobile-nav:not(.hidden){display:grid;grid-template-columns:repeat(6,minmax(0,1fr));gap:2px;position:fixed;z-index:20;left:0;right:0;bottom:0;padding:7px max(6px,env(safe-area-inset-right)) calc(7px + env(safe-area-inset-bottom)) max(6px,env(safe-area-inset-left));background:#fff;border-top:1px solid var(--line);box-shadow:0 -5px 20px #101d3512}
   .mobile-nav .nav-link{display:flex;flex-direction:column;justify-content:center;align-items:center;gap:3px;padding:7px 2px;margin:0;font-size:10px;white-space:nowrap}
+  .mobile-nav .nav-link.hidden{display:none!important}
   .mobile-nav .nav-icon{font-size:17px;width:auto}
   .page-heading{flex-direction:column}
   .page-heading h2{font-size:23px}
@@ -133,7 +134,7 @@ button.secondary{background:#e8edf5;color:var(--navy)}
 .beta-notice strong{color:#101d35}
 .job-open-card{cursor:pointer;transition:border-color .15s,box-shadow .15s}.job-open-card:hover{border-color:var(--gold);box-shadow:0 5px 18px #101d3512}.job-open-card:focus-visible{outline:3px solid #d5ad5280;outline-offset:2px}.job-modal-backdrop{position:fixed;inset:0;z-index:100;background:#0b1528a8;display:flex;align-items:center;justify-content:center;padding:16px}.job-modal-backdrop.hidden{display:none!important}.job-modal{background:#fff;width:min(680px,100%);max-height:90vh;overflow:auto;border-radius:18px;padding:22px;box-shadow:0 18px 60px #0004}.job-modal-head{display:flex;justify-content:space-between;align-items:center;gap:12px}.job-modal-head h2{margin:0}.job-modal-close{width:auto;margin:0;padding:8px 13px}.job-modal-actions{display:flex;gap:8px;flex-wrap:wrap;margin-top:14px}.job-modal-actions button{width:auto;flex:1;min-width:110px}.job-modal label{display:block;font-size:13px;font-weight:700;margin-top:10px}.job-modal input,.job-modal textarea,.job-modal select{margin:5px 0}.job-modal .danger{background:#9f2d35;color:#fff}@media(max-width:480px){.job-modal{padding:17px}.job-modal-actions button{min-width:100%}}
 
-.admin-menu-wrap{position:relative;display:inline-block;margin:16px 0 8px;z-index:5}.admin-menu-toggle{width:auto;min-width:170px;display:flex;align-items:center;justify-content:space-between;gap:18px;margin:0;padding:11px 15px;border:1px solid #d5ad52;border-radius:10px;background:#101d35;color:#fff;font-size:14px}.admin-menu-items{position:absolute;top:calc(100% + 7px);left:0;width:min(280px,calc(100vw - 48px));padding:7px;background:#fff;border:1px solid var(--line);border-radius:12px;box-shadow:0 12px 30px #101d3526}.admin-menu-items.hidden{display:none!important}.admin-menu-item{display:flex;align-items:center;gap:12px;width:100%;margin:2px 0;padding:11px 12px;border:0;border-radius:8px;background:transparent;color:var(--ink);text-align:left;font-size:14px;font-weight:650}.admin-menu-item span{color:#a1843b;font-size:11px;font-weight:800}.admin-menu-item:hover,.admin-menu-item.active{background:#f5f2e9;color:var(--navy)}.admin-tab-panel{border:1px solid var(--line);border-radius:12px;padding:14px;margin-top:10px}.admin-tab-panel h3{margin-top:0}
+.admin-menu-wrap{position:relative;display:inline-block;margin:16px 0 8px;z-index:5}.admin-menu-wrap.hidden{display:none!important}.admin-menu-toggle{width:auto;min-width:170px;display:flex;align-items:center;justify-content:space-between;gap:18px;margin:0;padding:11px 15px;border:1px solid #d5ad52;border-radius:10px;background:#101d35;color:#fff;font-size:14px}.admin-menu-items{position:absolute;top:calc(100% + 7px);left:0;width:min(280px,calc(100vw - 48px));padding:7px;background:#fff;border:1px solid var(--line);border-radius:12px;box-shadow:0 12px 30px #101d3526}.admin-menu-items.hidden{display:none!important}.admin-menu-item{display:flex;align-items:center;gap:12px;width:100%;margin:2px 0;padding:11px 12px;border:0;border-radius:8px;background:transparent;color:var(--ink);text-align:left;font-size:14px;font-weight:650}.admin-menu-item span{color:#a1843b;font-size:11px;font-weight:800}.admin-menu-item:hover,.admin-menu-item.active{background:#f5f2e9;color:var(--navy)}.admin-tab-panel{border:1px solid var(--line);border-radius:12px;padding:14px;margin-top:10px}.admin-tab-panel h3{margin-top:0}
 </style>
 </head>
 <body>
@@ -208,13 +209,17 @@ button.secondary{background:#e8edf5;color:var(--navy)}
 <div class="content-area">
 <section class="card hidden" id="home">
   <div class="page-heading"><div><h2 id="welcomeTitle">Your dashboard</h2><p id="welcomeSubtitle">Your jobs and account activity in one place.</p></div><span class="pill">JK TRADES MEMBER</span></div>
-  <div class="hero-panel"><div class="hero-tag">YOUR LOCAL TRADES MARKETPLACE</div><h2 id="heroTitle">What do you need help with?</h2><p id="heroText">Post a job and connect with local tradespeople. Keep everything organised from your JK TRADES dashboard.</p><div class="hero-actions"><button class="gold" id="heroPrimary" onclick="navigate('postjob')">Post a job</button><button class="secondary" id="heroSecondary" onclick="navigate('jobs')">View my jobs</button></div></div>
+  <div class="hero-panel"><div class="hero-tag">YOUR LOCAL TRADES MARKETPLACE</div><h2 id="heroTitle">What do you need help with?</h2><p id="heroText">Post a job and connect with local tradespeople. Keep everything organised from your JK TRADES dashboard.</p><div class="hero-actions"><button class="gold" id="heroPrimary" onclick="navigate('postjob')">Post a job</button><button class="secondary" id="heroSecondary" onclick="navigate('jobs')">View my jobs</button><button class="gold hidden" id="tradesHeroPrimary" onclick="navigate('findwork')">Find work</button><button class="secondary hidden" id="tradesHeroSecondary" onclick="navigate('messages')">Messages</button></div></div>
   <div class="stats-grid"><div class="stat-card"><strong id="statJobs">—</strong><span>My jobs</span></div><div class="stat-card"><strong id="statStatus">—</strong><span>Account status</span></div><div class="stat-card"><strong id="statRole">—</strong><span>Account type</span></div></div>
-  <h2>Quick access</h2><div class="quick-grid">
-    <button class="quick-card" onclick="navigate('postjob')"><span class="quick-icon">＋</span><strong>Post a job</strong><span>Tell local tradespeople what needs doing.</span></button>
-    <button class="quick-card" onclick="navigate('jobs')"><span class="quick-icon">▤</span><strong>My jobs</strong><span>See the jobs you've posted and their status.</span></button>
-    <button class="quick-card" onclick="navigate('profile')"><span class="quick-icon">◉</span><strong>My profile</strong><span>Review your account details.</span></button>
-    <button class="quick-card" onclick="navigate('settings')"><span class="quick-icon">⚙</span><strong>Settings</strong><span>Manage your account preferences.</span></button>
+  <h2 id="quickAccessHeading">Quick access</h2><div class="quick-grid">
+    <button class="quick-card" id="customerQuickPost" onclick="navigate('postjob')"><span class="quick-icon">＋</span><strong>Post a job</strong><span>Tell local tradespeople what needs doing.</span></button>
+    <button class="quick-card" id="customerQuickJobs" onclick="navigate('jobs')"><span class="quick-icon">▤</span><strong>My jobs</strong><span>See the jobs you've posted and their status.</span></button>
+    <button class="quick-card" id="customerQuickProfile" onclick="navigate('profile')"><span class="quick-icon">◉</span><strong>My profile</strong><span>Review your account details.</span></button>
+    <button class="quick-card" id="customerQuickSettings" onclick="navigate('settings')"><span class="quick-icon">⚙</span><strong>Settings</strong><span>Manage your account preferences.</span></button>
+    <button class="quick-card hidden" id="tradesQuickFind" onclick="navigate('findwork')"><span class="quick-icon">⌕</span><strong>Find work</strong><span>Browse available customer jobs.</span></button>
+    <button class="quick-card hidden" id="tradesQuickMessages" onclick="navigate('messages')"><span class="quick-icon">✉</span><strong>Messages</strong><span>Open customer conversations.</span></button>
+    <button class="quick-card hidden" id="tradesQuickProfile" onclick="navigate('profile')"><span class="quick-icon">◉</span><strong>My profile</strong><span>Manage your business details.</span></button>
+    <button class="quick-card hidden" id="tradesQuickSkills" onclick="navigate('trades')"><span class="quick-icon">⚒</span><strong>Trade & qualifications</strong><span>Manage your trade details and evidence.</span></button>
   </div>
 </section>
 <section class="card hidden" id="findwork">
@@ -495,6 +500,11 @@ let currentConversationJobId = null;
 function msg(t){document.getElementById("message").textContent=t}
 const pages=["home","findwork","postjob","jobs","messages","profile","settings","customer","trades","admin","account","welcome","register","login"];
 function updateNavigationForRole(){
+  const isTrades=currentDashboard==="trades";
+  ["heroPrimary","heroSecondary","customerQuickPost","customerQuickJobs","customerQuickProfile","customerQuickSettings"].forEach(id=>document.getElementById(id)?.classList.toggle("hidden",isTrades));
+  ["tradesHeroPrimary","tradesHeroSecondary","tradesQuickFind","tradesQuickMessages","tradesQuickProfile","tradesQuickSkills"].forEach(id=>document.getElementById(id)?.classList.toggle("hidden",!isTrades));
+  const quickHeading=document.getElementById("quickAccessHeading");
+  if(quickHeading)quickHeading.textContent=isTrades?"Your workspace":"Quick access";
   const allowed={
     customer:new Set(["home","postjob","jobs","messages","profile","trades","settings"]),
     trades:new Set(["home","findwork","messages","profile","trades","settings"]),
@@ -509,6 +519,8 @@ function updateNavigationForRole(){
   document.getElementById("mobileNav").classList.toggle("hidden",!currentUser || currentDashboard==="admin");
   document.getElementById("sessionNav").classList.toggle("hidden",!currentUser);
   document.getElementById("headerAdminMenu")?.classList.toggle("hidden",!currentUser || currentDashboard!=="admin");
+  document.getElementById("adminMenuItems")?.classList.add("hidden");
+  document.getElementById("adminMenuToggle")?.setAttribute("aria-expanded","false");
   const dashboardButton=document.querySelector("#sessionNav button[onclick=\"goToDashboard()\"]");
   if(dashboardButton)dashboardButton.textContent=currentDashboard==="admin"?"Home menu":"My dashboard";
 }
