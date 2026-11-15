@@ -280,6 +280,7 @@ button.secondary{background:#e8edf5;color:var(--navy)}
   <option value="insurance">Public liability insurance</option>
   <option value="other">Other qualification or certificate</option>
  </select>
+ <p id="credentialGuidance" class="small" role="note">Choose the credential type. We will show the relevant details to provide. All submissions remain private until reviewed.</p>
  <input id="credentialTitle" placeholder="Qualification / certificate title">
  <input id="credentialIssuer" placeholder="Awarding body, scheme or insurer">
  <input id="credentialNumber" placeholder="Registration / certificate / policy number">
@@ -328,7 +329,53 @@ const TRADE_SERVICES = {
  "Outdoor & Groundworks":["Landscaping & gardening","Fencing & decking","Driveways & paving","Groundworks & drainage","Tree surgery"],
  "Cleaning & Specialist Services":["Domestic cleaning","Commercial cleaning","End of tenancy cleaning","Window cleaning","Carpet & upholstery cleaning","Pest control","Waste removal"]
 };
+function updateCredentialGuidance(){
+ const type=document.getElementById("credentialType")?.value;
+ const guidance=document.getElementById("credentialGuidance");
+ const number=document.getElementById("credentialNumber");
+ const title=document.getElementById("credentialTitle");
+ const issuer=document.getElementById("credentialIssuer");
+ if(!guidance||!number||!title||!issuer)return;
+ const details={
+  gas_safe_business:{
+   text:"Gas work: enter the Gas Safe business registration number, the registered business name and the relevant work categories shown on the registration. Upload the current Gas Safe registration evidence. We check the registration; entering a number alone does not verify it.",
+   number:"Gas Safe business registration number",title:"Registered business name",issuer:"Gas Safe Register"
+  },
+  gas_engineer_card:{
+   text:"Gas engineer: enter the seven-digit licence number shown on the engineer's Gas Safe ID card, the engineer's name and the exact categories of gas work shown on the card. Upload clear images of the card (front and back if relevant).",
+   number:"Seven-digit Gas Safe engineer licence number",title:"Engineer name as shown on ID",issuer:"Gas Safe Register"
+  },
+  electrical_qualification:{
+   text:"Electrical work: enter the qualification name, awarding body and certificate/reference number. Add the work scope and upload the certificate. There is no single universal electrician licence number in the UK, so do not enter a made-up licence number.",
+   number:"Certificate or verification reference",title:"Qualification name",issuer:"Awarding body (e.g. City & Guilds / EAL)"
+  },
+  electrical_scheme:{
+   text:"Competent-person scheme (where applicable): enter the scheme name, membership/business number and the scope of work covered. Scheme membership is not a universal legal requirement for every electrician or every electrical task. Upload current membership evidence.",
+   number:"Scheme membership / registration number",title:"Scheme and membership type",issuer:"Scheme provider"
+  },
+  renewables_qualification:{
+   text:"Renewables and energy: enter the qualification or manufacturer training, awarding body/provider, certificate reference and the technologies/work scope covered. Upload supporting evidence.",
+   number:"Certificate or registration reference",title:"Qualification / training title",issuer:"Awarding body or training provider"
+  },
+  insurance:{
+   text:"Insurance: enter the insurer, policy reference, cover type and level, and expiry date. Upload the current schedule or certificate. Policy details remain private and are not displayed publicly.",
+   number:"Policy number",title:"Policy / cover type",issuer:"Insurer"
+  },
+  other:{
+   text:"Enter the full qualification or certificate title, issuing organisation, reference number and work scope. Upload clear supporting evidence.",
+   number:"Certificate / registration reference",title:"Qualification / certificate title",issuer:"Issuing organisation"
+  }
+ };
+ const item=details[type]||details.other;
+ guidance.textContent=item.text;
+ number.placeholder=item.number;
+ title.placeholder=item.title;
+ issuer.placeholder=item.issuer;
+}
 function populateTradeSelectors(){
+ const credentialType=document.getElementById("credentialType");
+ if(credentialType)credentialType.addEventListener("change",updateCredentialGuidance);
+ updateCredentialGuidance();
  const extraCategory=document.getElementById("extraSkillCategory");
  if(extraCategory){
   Object.keys(TRADE_SERVICES).forEach(category=>{const o=document.createElement("option");o.value=category;o.textContent=category;extraCategory.append(o)});
@@ -946,7 +993,8 @@ async function submitTradeCredential(){
  const issued=document.getElementById("credentialIssued").value||null;
  const expires=document.getElementById("credentialExpiry").value||null;
  const file=document.getElementById("credentialEvidence").files[0];
- if(!title||!number){msg("Enter the qualification title and its registration or certificate number.");return}
+ if(!title||!number||!issuer){msg("Enter the qualification title, issuing organisation and registration or certificate number.");return}
+ if(type==="gas_engineer_card"&&!/^\\d{7}$/.test(number.replace(/\\s+/g,""))){msg("A Gas Safe engineer ID card licence number must contain seven digits.");return}
  if(!file){msg("Please upload the certificate, ID card or supporting evidence for review.");return}
  const allowed=["application/pdf","image/jpeg","image/png","image/webp"];
  if(!allowed.includes(file.type)||file.size>10*1024*1024){msg("Use a PDF, JPG, PNG or WebP file no larger than 10MB.");return}
