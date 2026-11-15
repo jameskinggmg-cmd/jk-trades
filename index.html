@@ -273,19 +273,45 @@ const SUPABASE_KEY = "sb_publishable_OvPRFg4iqg39SMWlNnGmVg_kyP0zh3j";
 const db = window.supabase.createClient(SUPABASE_URL,SUPABASE_KEY);
 let currentUser = null;
 let currentDashboard = null;
+let currentTradeStatus = null;
 let openJobCache = [];
 let currentPage = "home";
 
 function msg(t){document.getElementById("message").textContent=t}
 const pages=["home","findwork","postjob","jobs","messages","profile","settings","customer","trades","admin","account","welcome","register","login"];
+function updateNavigationForRole(){
+  const allowed={
+    customer:new Set(["home","postjob","jobs","messages","profile","trades","settings"]),
+    trades:new Set(["home","findwork","messages","profile","trades","settings"]),
+    admin:new Set()
+  };
+  document.querySelectorAll("[data-page]").forEach(el=>{
+    let visible=!!currentUser && !!allowed[currentDashboard]?.has(el.dataset.page);
+    if(currentDashboard==="trades" && el.dataset.page==="findwork") visible=currentTradeStatus==="approved";
+    el.classList.toggle("hidden",!visible);
+  });
+  document.getElementById("sideNav").classList.toggle("hidden",!currentUser || currentDashboard==="admin");
+  document.getElementById("mobileNav").classList.toggle("hidden",!currentUser || currentDashboard==="admin");
+  document.getElementById("sessionNav").classList.toggle("hidden",!currentUser);
+}
 function navigate(page){
+  if(currentUser && currentDashboard==="customer" && page==="findwork"){
+    msg("Find work is available to approved tradespeople. You can apply from Trade application.");
+    page="home";
+  }
+  if(currentUser && currentDashboard==="trades" && (page==="postjob" || page==="jobs")){
+    msg("Posting and managing customer jobs is available from a customer account.");
+    page="trades";
+  }
+  if(currentUser && currentDashboard==="trades" && page==="findwork" && currentTradeStatus!=="approved"){
+    msg("Available work will unlock once your tradesperson application is approved.");
+    page="trades";
+  }
+  if(currentUser && currentDashboard==="admin" && page!=="admin") page="admin";
   currentPage=page;
   pages.forEach(id=>{const el=document.getElementById(id);if(el)el.classList.toggle("hidden",id!==page)});
   document.querySelectorAll("[data-page]").forEach(el=>el.classList.toggle("active",el.dataset.page===page));
-  const signedIn=!!currentUser;
-  document.getElementById("sideNav").classList.toggle("hidden",!signedIn);
-  document.getElementById("mobileNav").classList.toggle("hidden",!signedIn);
-  document.getElementById("sessionNav").classList.toggle("hidden",!signedIn);
+  updateNavigationForRole();
   if(page==="jobs") loadMyJobsPage();
   if(page==="findwork") loadFindWork();
   if(page==="profile") loadProfile();
@@ -362,6 +388,7 @@ async function logout(){
   if(error){msg(error.message);return}
   currentUser=null;
   currentDashboard=null;
+  currentTradeStatus=null;
   navigate("welcome");
   msg("You have logged out.");
 }
@@ -421,7 +448,9 @@ async function loadTradePage(){
  form.classList.add("hidden");
  jobsPanel.classList.add("hidden");
  const {data:app,error}=await db.from("trade_applications").select("status,business_name,trade").eq("user_id",currentUser.id).maybeSingle();
- if(error){statusBox.textContent="We couldn't check your application: "+error.message;return}
+ if(error){currentTradeStatus=null;updateNavigationForRole();statusBox.textContent="We couldn't check your application: "+error.message;return}
+ currentTradeStatus=app?.status||null;
+ updateNavigationForRole();
  if(!app){
    statusBox.textContent="You haven't applied to become a tradesperson yet. Complete the short form below to apply.";
    form.classList.remove("hidden");
@@ -478,7 +507,8 @@ db.auth.onAuthStateChange((event,session)=>{
   if(event==="SIGNED_OUT"){
     currentUser=null;
     currentDashboard=null;
-    document.getElementById("sessionNav").classList.add("hidden");
+    currentTradeStatus=null;
+    updateNavigationForRole();
   }
 });
 (async()=>{
