@@ -1135,7 +1135,7 @@ function showAdminTab(panelId,button){
  const toggle=document.getElementById("adminMenuToggle");
  menu?.classList.add("hidden");
  toggle?.setAttribute("aria-expanded","false");
- if(button&&toggle)toggle.innerHTML="☰ "+button.textContent.trim().replace(/^\\d+\\s*/,"")+" <span aria-hidden='true'>▾</span>";
+ if(button&&toggle)toggle.innerHTML="☰ "+button.textContent.trim().replace(/^\d+\s*/,"")+" <span aria-hidden='true'>▾</span>";
 }
 async function loadAdmin(){
  await loadCustomerUsers();
