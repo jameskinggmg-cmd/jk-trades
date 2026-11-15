@@ -509,6 +509,8 @@ function updateNavigationForRole(){
   document.getElementById("mobileNav").classList.toggle("hidden",!currentUser || currentDashboard==="admin");
   document.getElementById("sessionNav").classList.toggle("hidden",!currentUser);
   document.getElementById("headerAdminMenu")?.classList.toggle("hidden",!currentUser || currentDashboard!=="admin");
+  const dashboardButton=document.querySelector("#sessionNav button[onclick=\"goToDashboard()\"]");
+  if(dashboardButton)dashboardButton.textContent=currentDashboard==="admin"?"Home menu":"My dashboard";
 }
 function navigate(page){
   if(currentUser && currentDashboard==="customer" && page==="findwork"){
