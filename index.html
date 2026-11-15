@@ -125,6 +125,16 @@ button.secondary{background:#e8edf5;color:var(--navy)}
   <div class="brand-lockup"><div class="brand-mark">JK</div><div><h1>JK TRADES</h1><p>Trusted trades. Local jobs. Nationwide service.</p></div></div>
   <nav id="sessionNav" class="session-nav hidden" aria-label="Account navigation">
     <button type="button" class="gold" onclick="goToDashboard()">Home menu</button>
+    <div class="admin-menu-wrap hidden" id="headerAdminMenu">
+ <button type="button" class="admin-menu-toggle" id="adminMenuToggle" aria-expanded="false" aria-controls="adminMenuItems" onclick="toggleAdminMenu()">☰ Menu <span aria-hidden="true">▾</span></button>
+ <nav class="admin-menu-items hidden" id="adminMenuItems" aria-label="Admin sections">
+  <button type="button" class="admin-menu-item" role="tab" aria-selected="false" aria-controls="adminTabApplications" onclick="showAdminTab('adminTabApplications',this)"> <span>01</span> Tradesperson approvals</button>
+  <button type="button" class="admin-menu-item" role="tab" aria-selected="false" aria-controls="adminTabCredentials" onclick="showAdminTab('adminTabCredentials',this)"><span>02</span> Qualifications</button>
+  <button type="button" class="admin-menu-item" role="tab" aria-selected="false" aria-controls="adminTabActiveJobs" onclick="showAdminTab('adminTabActiveJobs',this)"><span>03</span> Active jobs</button>
+  <button type="button" class="admin-menu-item" role="tab" aria-selected="false" aria-controls="adminTabCancelledJobs" onclick="showAdminTab('adminTabCancelledJobs',this)"><span>04</span> Cancelled jobs</button>
+  <button type="button" class="admin-menu-item" role="tab" aria-selected="false" aria-controls="adminTabCustomers" onclick="showAdminTab('adminTabCustomers',this)"><span>05</span> Customer users</button>
+ </nav>
+</div>
     <button type="button" class="secondary" onclick="logout()">Log out</button>
   </nav>
 </div>
@@ -302,16 +312,7 @@ button.secondary{background:#e8edf5;color:var(--navy)}
 <section class="card hidden" id="admin">
 <h2>JK TRADES Admin</h2>
 <p>Private administration area. Choose a tab to open a section; select another tab to minimise the current section.</p>
-<div class="admin-menu-wrap">
- <button type="button" class="admin-menu-toggle" id="adminMenuToggle" aria-expanded="false" aria-controls="adminMenuItems" onclick="toggleAdminMenu()">☰ Menu <span aria-hidden="true">▾</span></button>
- <nav class="admin-menu-items hidden" id="adminMenuItems" aria-label="Admin sections">
-  <button type="button" class="admin-menu-item" role="tab" aria-selected="false" aria-controls="adminTabApplications" onclick="showAdminTab('adminTabApplications',this)"> <span>01</span> Tradesperson approvals</button>
-  <button type="button" class="admin-menu-item" role="tab" aria-selected="false" aria-controls="adminTabCredentials" onclick="showAdminTab('adminTabCredentials',this)"><span>02</span> Qualifications</button>
-  <button type="button" class="admin-menu-item" role="tab" aria-selected="false" aria-controls="adminTabActiveJobs" onclick="showAdminTab('adminTabActiveJobs',this)"><span>03</span> Active jobs</button>
-  <button type="button" class="admin-menu-item" role="tab" aria-selected="false" aria-controls="adminTabCancelledJobs" onclick="showAdminTab('adminTabCancelledJobs',this)"><span>04</span> Cancelled jobs</button>
-  <button type="button" class="admin-menu-item" role="tab" aria-selected="false" aria-controls="adminTabCustomers" onclick="showAdminTab('adminTabCustomers',this)"><span>05</span> Customer users</button>
- </nav>
-</div>
+
 <div id="adminTabApplications" class="admin-tab-panel hidden" role="tabpanel"><h3>Tradesperson applications</h3><div id="applications"></div></div>
 <div id="adminTabCredentials" class="admin-tab-panel hidden" role="tabpanel"><h3>Qualification verification queue</h3><div id="credentialReviewQueue"></div></div>
 <div id="adminTabActiveJobs" class="admin-tab-panel hidden" role="tabpanel"><h3>Active customer jobs</h3><div id="allJobs"></div></div>
@@ -490,6 +491,7 @@ function updateNavigationForRole(){
   document.getElementById("sideNav").classList.toggle("hidden",!currentUser || currentDashboard==="admin");
   document.getElementById("mobileNav").classList.toggle("hidden",!currentUser || currentDashboard==="admin");
   document.getElementById("sessionNav").classList.toggle("hidden",!currentUser);
+  document.getElementById("headerAdminMenu")?.classList.toggle("hidden",!currentUser || currentDashboard!=="admin");
 }
 function navigate(page){
   if(currentUser && currentDashboard==="customer" && page==="findwork"){
