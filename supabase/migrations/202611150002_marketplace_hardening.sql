@@ -117,3 +117,5 @@ create index if not exists conversations_tradesperson_id_idx on public.conversat
 create index if not exists messages_sender_id_idx on public.messages(sender_id);
 create index if not exists reviews_customer_id_idx on public.reviews(customer_id);
 create index if not exists job_photos_customer_id_idx on public.job_photos(customer_id);
+
+create index if not exists job_photos_job_id_idx on public.job_photos(job_id);
