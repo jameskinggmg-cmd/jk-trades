@@ -1,4 +1,3 @@
-
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -13,6 +12,9 @@ body{margin:0;background:var(--light);font-family:Arial,sans-serif;color:#182238
 header{background:var(--navy);color:white;padding:24px 16px;text-align:center}
 header h1{margin:0;color:var(--gold);letter-spacing:3px}
 header p{margin:8px 0 0}
+.session-nav{max-width:650px;margin:16px auto 0;display:flex;gap:10px;justify-content:center}
+.session-nav button{width:auto;flex:1;max-width:220px;margin:0}
+.session-nav.hidden{display:none}
 main{max-width:650px;margin:25px auto;padding:0 14px}
 .card{background:white;padding:22px;border-radius:12px;margin-bottom:18px;box-shadow:0 3px 14px #0000000d}
 h2{margin-top:0;color:var(--navy)}
@@ -25,12 +27,20 @@ button.secondary{background:#e8edf5;color:var(--navy)}
 .small{font-size:13px;color:#687386}
 .item{border:1px solid #dce1e9;padding:13px;border-radius:8px;margin:10px 0}
 .status{font-weight:bold;color:#8a6415}
+@media(max-width:480px){
+  .session-nav{gap:8px}
+  .session-nav button{padding:12px 8px;font-size:15px}
+}
 </style>
 </head>
 <body>
 <header>
 <h1>JK TRADES</h1>
 <p>Trusted trades. Local jobs. Nationwide service.</p>
+<nav id="sessionNav" class="session-nav hidden" aria-label="Account navigation">
+<button type="button" class="gold" onclick="goToDashboard()">Dashboard</button>
+<button type="button" class="secondary" onclick="logout()">Log out</button>
+</nav>
 </header>
 <main>
 <section class="card" id="welcome">
@@ -111,12 +121,23 @@ const SUPABASE_URL = "https://zrloxobjeetxtjpevthc.supabase.co";
 const SUPABASE_KEY = "sb_publishable_OvPRFg4iqg39SMWlNnGmVg_kyP0zh3j";
 const db = window.supabase.createClient(SUPABASE_URL,SUPABASE_KEY);
 let currentUser = null;
+let currentDashboard = null;
 
 function msg(t){document.getElementById("message").textContent=t}
 function show(id){
-["welcome","register","login","account","customer","trades","admin"]
-.forEach(x=>document.getElementById(x).classList.add("hidden"));
-document.getElementById(id).classList.remove("hidden");
+  ["welcome","register","login","account","customer","trades","admin"]
+    .forEach(x=>document.getElementById(x).classList.add("hidden"));
+  document.getElementById(id).classList.remove("hidden");
+  if(["customer","trades","admin"].includes(id)) currentDashboard=id;
+  document.getElementById("sessionNav").classList.toggle("hidden",!currentUser);
+}
+async function goToDashboard(){
+  if(!currentUser || !currentDashboard) return;
+  const destination=currentDashboard;
+  show(destination);
+  if(destination==="customer") await loadMyJobs();
+  if(destination==="trades") await loadOpenJobs();
+  if(destination==="admin") await loadAdmin();
 }
 async function register(){
 const name=regName.value.trim(),email=regEmail.value.trim(),
@@ -128,30 +149,40 @@ email,password,options:{data:{full_name:name,account_type:type}}
 msg(error?error.message:"Registration submitted. Check your email to confirm your account.");
 }
 async function login(){
-const {data,error}=await db.auth.signInWithPassword({
+const {error}=await db.auth.signInWithPassword({
 email:loginEmail.value.trim(),password:loginPassword.value
 });
 if(error){msg(error.message);return}
-await loadAccount(data.user);
 }
 async function logout(){
-await db.auth.signOut();currentUser=null;show("welcome");msg("You have logged out.");
+  const {error}=await db.auth.signOut();
+  if(error){msg(error.message);return}
+  currentUser=null;
+  currentDashboard=null;
+  document.getElementById("sessionNav").classList.add("hidden");
+  show("welcome");
+  msg("You have logged out.");
 }
 async function loadAccount(user){
 currentUser=user;
-show("account");
-accountTitle.textContent="Welcome to JK TRADES";
-accountInfo.textContent=user.email;
 const {data:admin}=await db.from("admin_users").select("user_id").eq("user_id",user.id).maybeSingle();
-if(admin){show("admin");await loadAdmin();return}
+if(admin){
+  currentDashboard="admin";
+  show("admin");
+  await loadAdmin();
+  return;
+}
 const {data:app}=await db.from("trade_applications").select("status").eq("user_id",user.id).maybeSingle();
 const type=user.user_metadata?.account_type;
 if(app || type==="tradesperson"){
-show("trades");
-msg(app?"Your application status: "+app.status:"Complete your tradesperson application below.");
-await loadOpenJobs();
+  currentDashboard="trades";
+  show("trades");
+  msg(app?"Your application status: "+app.status:"Complete your tradesperson application below.");
+  await loadOpenJobs();
 }else{
-show("customer");await loadMyJobs();
+  currentDashboard="customer";
+  show("customer");
+  await loadMyJobs();
 }
 }
 async function postJob(){
@@ -218,7 +249,12 @@ msg(error?error.message:"Application "+status+".");
 if(!error)await loadAdmin();
 }
 db.auth.onAuthStateChange((event,session)=>{
-if(event==="SIGNED_IN"&&session?.user)loadAccount(session.user);
+  if(event==="SIGNED_IN" && session?.user && !currentUser) void loadAccount(session.user);
+  if(event==="SIGNED_OUT"){
+    currentUser=null;
+    currentDashboard=null;
+    document.getElementById("sessionNav").classList.add("hidden");
+  }
 });
 (async()=>{
 const {data}=await db.auth.getSession();
