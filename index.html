@@ -198,7 +198,15 @@ button.secondary{background:#e8edf5;color:var(--navy)}
 </section>
 <section class="card hidden" id="messages">
   <div class="page-heading"><div><h2>Messages</h2><p>Keep conversations about your jobs together.</p></div></div>
-  <div class="notice"><strong>Messaging is on the build list.</strong><br>I'm preparing the secure conversation and quote system before enabling messages, so customer and tradesperson conversations are private and linked to the correct job.</div>
+  <div id="conversationList" aria-live="polite"><p class="small">Loading your conversations…</p></div>
+  <div id="conversationPanel" class="hidden">
+    <div class="item"><strong id="conversationTitle">Conversation</strong><p id="conversationSubtitle"></p></div>
+    <div id="conversationMessages" aria-live="polite"></div>
+    <label for="messageDraft" class="small">Your message</label>
+    <textarea id="messageDraft" rows="3" maxlength="5000" placeholder="Write a message…"></textarea>
+    <button class="gold" onclick="sendConversationMessage()">Send message</button>
+    <button class="secondary" onclick="closeConversation()">Back to conversations</button>
+  </div>
 </section>
 <section class="card hidden" id="profile">
   <div class="page-heading"><div><h2>My profile</h2><p>Your JK TRADES account details.</p></div></div>
@@ -276,6 +284,8 @@ let currentDashboard = null;
 let currentTradeStatus = null;
 let openJobCache = [];
 let currentPage = "home";
+let currentConversationId = null;
+let currentConversationJobId = null;
 
 function msg(t){document.getElementById("message").textContent=t}
 const pages=["home","findwork","postjob","jobs","messages","profile","settings","customer","trades","admin","account","welcome","register","login"];
@@ -313,6 +323,7 @@ function navigate(page){
   document.querySelectorAll("[data-page]").forEach(el=>el.classList.toggle("active",el.dataset.page===page));
   updateNavigationForRole();
   if(page==="jobs") loadMyJobsPage();
+  if(page==="messages") loadMessagesPage();
   if(page==="findwork") loadFindWork();
   if(page==="profile") loadProfile();
   if(page==="trades" && currentUser) loadTradePage();
@@ -397,10 +408,83 @@ function renderCustomerJobCards(host,jobs,quotes){
 }
 async function acceptJobQuote(quoteId){
  if(!confirm("Accept this quote? Other pending quotes for the same job will be declined."))return;
+ const {data:quote,error:quoteError}=await db.from("quotes").select("job_id,tradesperson_id").eq("id",quoteId).single();
+ if(quoteError){msg(quoteError.message);return}
  const {error}=await db.rpc("accept_job_quote",{p_quote_id:quoteId});
  if(error){msg(error.message);return}
- msg("Quote accepted. Other pending quotes for this job have been declined.");
+ msg("Quote accepted. Setting up your private conversation…");
+ const {data:existing,error:findError}=await db.from("conversations").select("id").eq("job_id",quote.job_id).eq("customer_id",currentUser.id).eq("tradesperson_id",quote.tradesperson_id).maybeSingle();
+ if(findError){msg("Quote accepted, but the conversation could not be loaded: "+findError.message);await loadMyJobsPage();return}
+ let conversation=existing;
+ if(!conversation){
+  const {data:created,error:createError}=await db.from("conversations").insert({job_id:quote.job_id,customer_id:currentUser.id,tradesperson_id:quote.tradesperson_id}).select("id").single();
+  if(createError){msg("Quote accepted, but conversation setup failed: "+createError.message);await loadMyJobsPage();return}
+  conversation=created;
+ }
  await loadMyJobsPage();
+ await openConversation(conversation.id,quote.job_id);
+}
+async function loadMessagesPage(){
+ const host=document.getElementById("conversationList");
+ const panel=document.getElementById("conversationPanel");
+ panel.classList.add("hidden");host.classList.remove("hidden");host.textContent="Loading conversations…";
+ const column=currentDashboard==="trades"?"tradesperson_id":"customer_id";
+ const {data:conversations,error}=await db.from("conversations").select("id,job_id,customer_id,tradesperson_id,created_at").eq(column,currentUser.id).order("created_at",{ascending:false});
+ if(error){host.textContent="Couldn't load messages. If the marketplace database setup hasn't been applied yet, conversations will appear after setup. "+error.message;return}
+ host.innerHTML="";
+ if(!conversations?.length){host.textContent="No conversations yet. When a customer accepts a quote, the private job conversation will appear here.";return}
+ const jobIds=[...new Set(conversations.map(c=>c.job_id))];
+ const {data:jobs, error:jobsError}=await db.from("jobs").select("id,title,trade,postcode").in("id",jobIds);
+ const jobMap=new Map((jobs||[]).map(j=>[j.id,j]));
+ conversations.forEach(c=>{
+  const job=jobMap.get(c.job_id);
+  const card=makeItem(job?.title||"Job conversation",(job?.trade||"Job")+" · "+(job?.postcode||""));
+  const open=document.createElement("button");open.className="gold";open.textContent="Open messages";open.onclick=()=>openConversation(c.id,c.job_id);
+  card.append(open);host.append(card);
+ });
+ if(jobsError){const note=document.createElement("p");note.className="small";note.textContent="Some job details could not be loaded.";host.prepend(note)}
+}
+async function openConversation(conversationId,jobId){
+ currentConversationId=conversationId;currentConversationJobId=jobId;
+ const host=document.getElementById("conversationList"),panel=document.getElementById("conversationPanel");
+ host.classList.add("hidden");panel.classList.remove("hidden");
+ document.getElementById("conversationTitle").textContent="Job conversation";
+ const {data:job}=await db.from("jobs").select("title,trade,postcode").eq("id",jobId).maybeSingle();
+ document.getElementById("conversationSubtitle").textContent=job?[job.title,job.trade,job.postcode].filter(Boolean).join(" · "):"Private conversation about your job";
+ await loadConversationMessages();
+}
+async function loadConversationMessages(){
+ const host=document.getElementById("conversationMessages");host.innerHTML="Loading messages…";
+ const {data:rows,error}=await db.from("messages").select("id,sender_id,body,read_at,created_at").eq("conversation_id",currentConversationId).order("created_at",{ascending:true});
+ if(error){host.textContent="Couldn't load messages: "+error.message;return}
+ host.innerHTML="";
+ if(!rows?.length){const empty=document.createElement("p");empty.className="small";empty.textContent="No messages yet. Send the first message to get things started.";host.append(empty)}
+ for(const row of rows||[]){
+  const item=document.createElement("div");item.className="item";
+  const who=document.createElement("strong");who.textContent=row.sender_id===currentUser.id?"You":"Other participant";
+  const body=document.createElement("p");body.textContent=row.body;
+  const time=document.createElement("p");time.className="small";time.textContent=new Date(row.created_at).toLocaleString("en-GB");
+  item.append(who,body,time);host.append(item);
+  if(row.sender_id!==currentUser.id&&!row.read_at){
+   const {error:readError}=await db.rpc("mark_conversation_message_read",{p_message_id:row.id});
+   if(readError) console.warn("Message read receipt was not updated:",readError.message);
+  }
+ }
+ host.scrollTop=host.scrollHeight;
+}
+async function sendConversationMessage(){
+ const input=document.getElementById("messageDraft"),body=input.value.trim();
+ if(!body){msg("Write a message before sending.");return}
+ if(!currentConversationId){msg("Open a conversation first.");return}
+ const {error}=await db.from("messages").insert({conversation_id:currentConversationId,sender_id:currentUser.id,body});
+ if(error){msg(error.message);return}
+ input.value="";msg("Message sent.");await loadConversationMessages();
+}
+function closeConversation(){
+ currentConversationId=null;currentConversationJobId=null;
+ document.getElementById("conversationPanel").classList.add("hidden");
+ document.getElementById("conversationList").classList.remove("hidden");
+ void loadMessagesPage();
 }
 async function submitNewJob(){
  const title=document.getElementById("newJobTitle").value.trim();
