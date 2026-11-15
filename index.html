@@ -12,6 +12,7 @@
 <link rel="apple-touch-icon" href="./icon.svg">
 <title>JK TRADES | UK Trades Marketplace</title>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="https://unpkg.com/@supabase/supabase-js@2"></script>
 <style>
 :root{--navy:#101d35;--gold:#d5ad52;--light:#f4f6fa;--ink:#182238;--muted:#718096;--line:#e5eaf1;--surface:#fff;--green:#17845b}
 *{box-sizing:border-box}
@@ -288,7 +289,8 @@ button.secondary{background:#e8edf5;color:var(--navy)}
 <script>
 const SUPABASE_URL = "https://zrloxobjeetxtjpevthc.supabase.co";
 const SUPABASE_KEY = "sb_publishable_OvPRFg4iqg39SMWlNnGmVg_kyP0zh3j";
-const db = window.supabase.createClient(SUPABASE_URL,SUPABASE_KEY);
+if(!window.supabase?.createClient){throw new Error("JK TRADES could not load its secure sign-in service. Check your internet connection, then refresh.");}
+ const db = window.supabase.createClient(SUPABASE_URL,SUPABASE_KEY,{auth:{persistSession:true,autoRefreshToken:true,detectSessionInUrl:true}});
 let currentUser = null;
 let currentDashboard = null;
 let currentTradeStatus = null;
@@ -687,11 +689,21 @@ msg(data.session
  : "Registration submitted. Check your email to confirm your account before logging in.");
 }
 async function login(){
-const {error}=await db.auth.signInWithPassword({
-email:loginEmail.value.trim(),password:loginPassword.value
-});
-if(error){msg(error.message);return}
+const button=document.querySelector("#login button.gold");
+const email=document.getElementById("loginEmail").value.trim();
+const password=document.getElementById("loginPassword").value;
+if(!email||!password){msg("Enter your email address and password.");return}
+if(button){button.disabled=true;button.textContent="Signing in…"}
+try{
+ const {data,error}=await db.auth.signInWithPassword({email,password});
+ if(error){msg(error.message);return}
+ if(data?.user){await loadAccount(data.user);msg("You're signed in.");}
+ else{msg("Sign-in did not return an account. Please try again.");}
+}catch(error){msg("Login could not complete: "+(error?.message||"Please check your connection and try again."));}
+finally{if(button){button.disabled=false;button.textContent="Log in"}}
 }
+window.login=login;
+window.register=register;
 async function logout(){
   const {error}=await db.auth.signOut();
   if(error){msg(error.message);return}
