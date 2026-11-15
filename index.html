@@ -615,8 +615,28 @@ async function submitNewJob(){
 async function loadProfile(){
  const name=currentUser.user_metadata?.full_name||"JK TRADES member";
  const role=currentDashboard==="trades"?"Tradesperson":currentDashboard==="admin"?"Administrator":"Customer";
- const rows=[["Name",name],["Email",currentUser.email||""],["Account type",role],["Member since",new Date(currentUser.created_at).toLocaleDateString("en-GB")]];
- document.getElementById("profileDetails").innerHTML=rows.map(([k,v])=>'<div class="item"><strong>'+k+'</strong><p>'+escapeText(v)+'</p></div>').join("");
+ const {data:profile,error}=await db.from("profiles").select("account_number,address_line1,address_line2,town_city,postcode").eq("id",currentUser.id).single();
+ const host=document.getElementById("profileDetails");
+ if(error){host.textContent="Your profile could not be loaded: "+error.message;return}
+ host.innerHTML=
+  '<div class="item"><strong>JK TRADES account ID</strong><p>'+escapeText(profile.account_number)+'</p><span class="small">Your unique member number. Keep it for account support.</span></div>'+
+  '<div class="item"><strong>Name</strong><p>'+escapeText(name)+'</p></div>'+
+  '<div class="item"><strong>Email</strong><p>'+escapeText(currentUser.email||"")+'</p></div>'+
+  '<div class="item"><strong>Account type</strong><p>'+escapeText(role)+'</p></div>'+
+  '<div class="item"><strong>Member since</strong><p>'+escapeText(new Date(currentUser.created_at).toLocaleDateString("en-GB"))+'</p></div>'+
+  '<form id="homeAddressForm" class="item"><h3>Home address</h3><p class="small">Only you can see the home address saved here. It is not shown to other customers or tradespeople. You choose if and when to share it with a tradesperson.</p>'+
+  '<label for="homeAddress1">Address line 1</label><input id="homeAddress1" maxlength="160" autocomplete="address-line1" required value="'+escapeText(profile.address_line1||"")+'">'+
+  '<label for="homeAddress2">Address line 2 (optional)</label><input id="homeAddress2" maxlength="160" autocomplete="address-line2" value="'+escapeText(profile.address_line2||"")+'">'+
+  '<label for="homeTownCity">Town or city</label><input id="homeTownCity" maxlength="100" autocomplete="address-level2" required value="'+escapeText(profile.town_city||"")+'">'+
+  '<label for="homePostcode">Postcode</label><input id="homePostcode" maxlength="16" autocomplete="postal-code" required value="'+escapeText(profile.postcode||"")+'">'+
+  '<button class="gold" type="submit">Save home address</button></form>';
+ document.getElementById("homeAddressForm").onsubmit=async(event)=>{
+  event.preventDefault();
+  const values={address_line1:document.getElementById("homeAddress1").value.trim(),address_line2:document.getElementById("homeAddress2").value.trim()||null,town_city:document.getElementById("homeTownCity").value.trim(),postcode:document.getElementById("homePostcode").value.trim()};
+  const {error:saveError}=await db.from("profiles").update(values).eq("id",currentUser.id);
+  if(saveError){msg("Your address could not be saved: "+saveError.message);return}
+  msg("Your private home address has been saved.");
+ };
 }
 function escapeText(value){return String(value??"").replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]))}
 
