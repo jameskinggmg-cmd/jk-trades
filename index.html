@@ -321,6 +321,7 @@ button.secondary{background:#e8edf5;color:var(--navy)}
   <div class="job-modal-actions">
    <button type="button" class="secondary" onclick="saveAdminJob(false)">Save edits</button>
    <button type="button" class="gold" onclick="saveAdminJob(true)">Save & put live</button>
+   <button type="button" class="danger" onclick="deleteCancelledAdminJob(editingAdminJobId, document.getElementById('adminJobTitle').value)">Remove permanently</button>
   </div>
  </section>
 </div>
@@ -1145,8 +1146,20 @@ async function loadCancelledAdminJobs(){
   const who=document.createElement("p");who.textContent="Posted by: "+(j.customer_name||"Name not supplied")+" · "+(j.customer_email||"Email unavailable");card.append(who);
   const description=document.createElement("p");description.textContent=j.description||"No description supplied";card.append(description);
   const edit=document.createElement("button");edit.type="button";edit.className="secondary";edit.textContent="View & edit";edit.onclick=()=>openAdminJobEditor(j);card.append(edit);
+  const remove=document.createElement("button");remove.type="button";remove.className="danger";remove.textContent="Remove permanently";remove.onclick=()=>deleteCancelledAdminJob(j.job_id,j.title);card.append(remove);
   host.append(card);
  });
+}
+
+async function deleteCancelledAdminJob(jobId,jobTitle){
+ if(!jobId)return;
+ const label=(jobTitle||"this cancelled job").trim();
+ if(!confirm("Permanently delete '"+label+"'? This cannot be undone."))return;
+ const {error}=await db.rpc("admin_delete_cancelled_job",{p_job_id:jobId});
+ if(error){msg("The cancelled job could not be removed: "+error.message);return}
+ if(editingAdminJobId===jobId)closeAdminJobModal();
+ msg("Cancelled job permanently removed.");
+ await loadAdmin();
 }
 
 function openAdminJobEditor(job){
