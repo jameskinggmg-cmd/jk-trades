@@ -2,46 +2,130 @@
 <html lang="en">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="theme-color" content="#101d35">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="JK TRADES">
+<link rel="manifest" href="./manifest.webmanifest">
+<link rel="icon" href="./icon.svg" type="image/svg+xml">
+<link rel="apple-touch-icon" href="./icon.svg">
 <title>JK TRADES | UK Trades Marketplace</title>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <style>
-:root{--navy:#101d35;--gold:#d5ad52;--light:#f4f6fa}
+:root{--navy:#101d35;--gold:#d5ad52;--light:#f4f6fa;--ink:#182238;--muted:#718096;--line:#e5eaf1;--surface:#fff;--green:#17845b}
 *{box-sizing:border-box}
-body{margin:0;background:var(--light);font-family:Arial,sans-serif;color:#182238}
-header{background:var(--navy);color:white;padding:24px 16px;text-align:center}
+body{margin:0;background:var(--light);font-family:Inter,system-ui,-apple-system,Segoe UI,sans-serif;color:var(--ink)}
+button,input,textarea,select{font:inherit}
+button{transition:transform .15s,background .15s}
+.job-photo-gallery{display:flex;flex-wrap:wrap;gap:10px;margin:12px 0}.job-photo-gallery figure{margin:0;width:112px}.job-photo-gallery a{display:block}.job-photo-gallery img{display:block;width:112px;height:88px;object-fit:cover;border-radius:10px;border:1px solid var(--line);background:#eef1f5}.job-photo-gallery figcaption{font-size:11px;color:var(--muted);margin-top:4px;overflow-wrap:anywhere}
+button:active{transform:scale(.985)}
+button:focus-visible,a:focus-visible,input:focus-visible,textarea:focus-visible,select:focus-visible{outline:3px solid #d5ad5280;outline-offset:2px}
+
+header{background:linear-gradient(120deg,#0d192e,#172b4c);color:white;padding:22px 18px;text-align:left;box-shadow:0 5px 22px #101d3520}
+.header-inner{max-width:1180px;margin:auto;display:flex;align-items:center;justify-content:space-between;gap:16px}
+.brand-lockup{display:flex;align-items:center;gap:12px}
+.brand-mark{width:46px;height:46px;border:1px solid #d5ad5280;border-radius:13px;display:grid;place-items:center;color:var(--gold);font-weight:900;font-size:18px}
+header h1{font-size:21px;letter-spacing:3px}
+header p{font-size:12px;color:#cbd5e1;margin:4px 0 0}
+
 header h1{margin:0;color:var(--gold);letter-spacing:3px}
 header p{margin:8px 0 0}
 .session-nav{max-width:650px;margin:16px auto 0;display:flex;gap:10px;justify-content:center}
 .session-nav button{width:auto;flex:1;max-width:220px;margin:0}
 .session-nav.hidden{display:none}
-main{max-width:650px;margin:25px auto;padding:0 14px}
-.card{background:white;padding:22px;border-radius:12px;margin-bottom:18px;box-shadow:0 3px 14px #0000000d}
+main{max-width:1180px;margin:26px auto;padding:0 18px}
+.app-layout{display:grid;grid-template-columns:235px minmax(0,1fr);gap:22px;align-items:start}
+.side-nav{background:#fff;border:1px solid var(--line);border-radius:16px;padding:13px;position:sticky;top:18px;box-shadow:0 5px 20px #101d3508}
+.side-nav .nav-caption{font-size:10px;letter-spacing:1.5px;color:#9aa5b5;font-weight:800;padding:12px 12px 7px}
+.nav-link{display:flex;align-items:center;gap:12px;width:100%;padding:12px;border:0;background:transparent;color:#536176;text-align:left;border-radius:10px;font-weight:650;margin:2px 0}
+.nav-link:hover,.nav-link.active{background:#f5f2e9;color:var(--navy)}
+.nav-link.active{box-shadow:inset 3px 0 var(--gold)}
+.nav-icon{width:22px;text-align:center;font-size:17px}
+.content-area{min-width:0}
+.page-heading{display:flex;justify-content:space-between;align-items:flex-start;gap:14px;margin:4px 0 20px}
+.page-heading h2{font-size:27px;margin:0 0 5px}
+.page-heading p{margin:0;color:var(--muted)}
+.stats-grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:12px;margin-bottom:18px}
+.stat-card{background:#fff;border:1px solid var(--line);border-radius:14px;padding:17px}
+.stat-card strong{font-size:25px;color:var(--navy);display:block}
+.stat-card span{font-size:12px;color:var(--muted)}
+.hero-panel{background:linear-gradient(115deg,#101d35,#203c64);color:white;border-radius:18px;padding:25px;margin-bottom:18px;position:relative;overflow:hidden}
+.hero-panel h2{color:white;font-size:26px;margin:0 0 8px}
+.hero-panel p{color:#d9e2ef;max-width:560px;line-height:1.55}
+.hero-panel .hero-tag{color:var(--gold);font-size:11px;font-weight:800;letter-spacing:1.6px}
+.hero-actions{display:flex;gap:10px;flex-wrap:wrap;margin-top:17px}
+.hero-actions button{width:auto;min-width:150px;margin:0}
+.quick-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px}
+.quick-card{background:#fff;border:1px solid var(--line);border-radius:14px;padding:18px;text-align:left;color:var(--ink)}
+.quick-card strong{display:block;color:var(--navy);margin:7px 0}
+.quick-card span{color:var(--muted);font-size:13px;line-height:1.4}
+.quick-card .quick-icon{font-size:22px}
+.mobile-nav{display:none}
+@media(max-width:760px){
+  main{margin:16px auto;padding:0 12px 86px}
+  .app-layout{display:block}
+  .side-nav{display:none!important}
+  .mobile-nav:not(.hidden){display:grid;grid-template-columns:repeat(6,minmax(0,1fr));gap:2px;position:fixed;z-index:20;left:0;right:0;bottom:0;padding:7px max(6px,env(safe-area-inset-right)) calc(7px + env(safe-area-inset-bottom)) max(6px,env(safe-area-inset-left));background:#fff;border-top:1px solid var(--line);box-shadow:0 -5px 20px #101d3512}
+  .mobile-nav .nav-link{display:flex;flex-direction:column;justify-content:center;align-items:center;gap:3px;padding:7px 2px;margin:0;font-size:10px;white-space:nowrap}
+  .mobile-nav .nav-icon{font-size:17px;width:auto}
+  .page-heading{flex-direction:column}
+  .page-heading h2{font-size:23px}
+  .stats-grid{grid-template-columns:repeat(3,minmax(0,1fr));gap:7px}
+  .stat-card{padding:12px 9px}
+  .stat-card strong{font-size:20px}
+  .stat-card span{font-size:10px}
+  .hero-panel{padding:20px}
+  .hero-panel h2{font-size:22px}
+  .card{padding:17px}
+}
+@media(max-width:380px){
+  .brand-mark{width:40px;height:40px}
+  header h1{font-size:18px}
+  header p{font-size:10px}
+  .quick-grid{grid-template-columns:1fr}
+  .session-nav{max-width:48%;margin:0}
+  .session-nav button{font-size:12px;padding:9px 6px}
+}
+
+.card{background:white;padding:22px;border-radius:15px;margin-bottom:18px;box-shadow:0 3px 14px #0000000d;border:1px solid var(--line)}
+.card h2{font-size:20px}
+
 h2{margin-top:0;color:var(--navy)}
 input,textarea,select,button{width:100%;padding:13px;margin:7px 0;border-radius:7px;font-size:16px}
-input,textarea,select{border:1px solid #ccd2dc}
+input,textarea,select{border:1px solid #d8dee8;background:#fff}
+input:focus,textarea:focus,select:focus{border-color:var(--gold)}
+
 button{background:var(--navy);color:white;border:0;font-weight:bold;cursor:pointer}
 button.gold{background:var(--gold);color:var(--navy)}
 button.secondary{background:#e8edf5;color:var(--navy)}
 .hidden{display:none}
 .small{font-size:13px;color:#687386}
-.item{border:1px solid #dce1e9;padding:13px;border-radius:8px;margin:10px 0}
+.item{border:1px solid #dce1e9;padding:15px;border-radius:11px;margin:10px 0;background:#fff}
+.item p{color:var(--muted);line-height:1.45;margin:7px 0 0}
+.pill{display:inline-flex;align-items:center;border-radius:99px;background:#f5f2e9;color:#80621e;padding:5px 9px;font-size:11px;font-weight:800}
+.notice{padding:14px;border-radius:11px;background:#f8f6ef;border:1px solid #eee4c9;color:#6c592d;line-height:1.5}
+
 .status{font-weight:bold;color:#8a6415}
 @media(max-width:480px){
   .session-nav{gap:8px}
   .session-nav button{padding:12px 8px;font-size:15px}
 }
+ .beta-notice{max-width:1180px;margin:14px auto 0;padding:11px 16px;border:1px solid #d5ad52;border-radius:12px;background:#fff9e9;color:#5b481b;font-size:13px;line-height:1.45}
+.beta-notice strong{color:#101d35}
 </style>
 </head>
 <body>
 <header>
-<h1>JK TRADES</h1>
-<p>Trusted trades. Local jobs. Nationwide service.</p>
-<nav id="sessionNav" class="session-nav hidden" aria-label="Account navigation">
-<button type="button" class="gold" onclick="goToDashboard()">Dashboard</button>
-<button type="button" class="secondary" onclick="logout()">Log out</button>
-</nav>
+<div class="header-inner">
+  <div class="brand-lockup"><div class="brand-mark">JK</div><div><h1>JK TRADES</h1><p>Trusted trades. Local jobs. Nationwide service.</p></div></div>
+  <nav id="sessionNav" class="session-nav hidden" aria-label="Account navigation">
+    <button type="button" class="gold" onclick="goToDashboard()">My dashboard</button>
+    <button type="button" class="secondary" onclick="logout()">Log out</button>
+  </nav>
+</div>
 </header>
+<aside class="beta-notice" role="note" aria-label="Beta programme notice"><strong>JK TRADES BETA — Early access.</strong> We're still improving and checking the service. Some features may not work as expected. Please report problems and do not rely on the beta for urgent or emergency work.</aside>
 <main>
 <section class="card" id="welcome">
 <h2>Welcome to JK TRADES</h2>
@@ -54,7 +138,9 @@ button.secondary{background:#e8edf5;color:var(--navy)}
 <h2>Create your account</h2>
 <input id="regName" placeholder="Your full name">
 <input id="regEmail" type="email" placeholder="Email address">
-<input id="regPassword" type="password" placeholder="Create password">
+<label class="small" for="regPassword">Create password (at least 12 characters)</label>
+<input id="regPassword" type="password" placeholder="Choose a long, unique password" minlength="12" autocomplete="new-password" required aria-describedby="passwordHelp">
+<p id="passwordHelp" class="small">Use 12 or more characters. A longer, unique passphrase is easier to remember. Don’t reuse a password from another website.</p>
 <select id="regType">
 <option value="customer">Customer</option>
 <option value="tradesperson">Tradesperson</option>
@@ -72,6 +158,74 @@ button.secondary{background:#e8edf5;color:var(--navy)}
 <button class="secondary" onclick="show('welcome')">Back</button>
 </section>
 
+<div class="app-layout">
+<aside class="side-nav hidden" id="sideNav" aria-label="Main navigation">
+  <div class="nav-caption">WORKSPACE</div>
+  <button class="nav-link active" data-page="home" onclick="navigate('home')"><span class="nav-icon">⌂</span>Dashboard</button>
+  <button class="nav-link" data-page="findwork" onclick="navigate('findwork')"><span class="nav-icon">⌕</span>Find work</button>
+  <button class="nav-link" data-page="postjob" onclick="navigate('postjob')"><span class="nav-icon">＋</span>Post a job</button>
+  <button class="nav-link" data-page="jobs" onclick="navigate('jobs')"><span class="nav-icon">▤</span>My jobs</button>
+  <button class="nav-link" data-page="messages" onclick="navigate('messages')"><span class="nav-icon">✉</span>Messages</button>
+  <div class="nav-caption">ACCOUNT</div>
+  <button class="nav-link" data-page="profile" onclick="navigate('profile')"><span class="nav-icon">◉</span>My profile</button>
+  <button class="nav-link" data-page="trades" onclick="navigate('trades')"><span class="nav-icon">⚒</span>Trade application</button>
+  <button class="nav-link" data-page="settings" onclick="navigate('settings')"><span class="nav-icon">⚙</span>Settings</button>
+</aside>
+<div class="content-area">
+<section class="card hidden" id="home">
+  <div class="page-heading"><div><h2 id="welcomeTitle">Your dashboard</h2><p id="welcomeSubtitle">Your jobs and account activity in one place.</p></div><span class="pill">JK TRADES MEMBER</span></div>
+  <div class="hero-panel"><div class="hero-tag">YOUR LOCAL TRADES MARKETPLACE</div><h2 id="heroTitle">What do you need help with?</h2><p id="heroText">Post a job and connect with local tradespeople. Keep everything organised from your JK TRADES dashboard.</p><div class="hero-actions"><button class="gold" id="heroPrimary" onclick="navigate('postjob')">Post a job</button><button class="secondary" id="heroSecondary" onclick="navigate('jobs')">View my jobs</button></div></div>
+  <div class="stats-grid"><div class="stat-card"><strong id="statJobs">—</strong><span>My jobs</span></div><div class="stat-card"><strong id="statStatus">—</strong><span>Account status</span></div><div class="stat-card"><strong id="statRole">—</strong><span>Account type</span></div></div>
+  <h2>Quick access</h2><div class="quick-grid">
+    <button class="quick-card" onclick="navigate('postjob')"><span class="quick-icon">＋</span><strong>Post a job</strong><span>Tell local tradespeople what needs doing.</span></button>
+    <button class="quick-card" onclick="navigate('jobs')"><span class="quick-icon">▤</span><strong>My jobs</strong><span>See the jobs you've posted and their status.</span></button>
+    <button class="quick-card" onclick="navigate('profile')"><span class="quick-icon">◉</span><strong>My profile</strong><span>Review your account details.</span></button>
+    <button class="quick-card" onclick="navigate('settings')"><span class="quick-icon">⚙</span><strong>Settings</strong><span>Manage your account preferences.</span></button>
+  </div>
+</section>
+<section class="card hidden" id="findwork">
+  <div class="page-heading"><div><h2>Find local work</h2><p>Browse jobs posted by customers.</p></div></div>
+  <div class="notice">Job matching and lead responses are being built next. The current list shows open jobs available through the existing marketplace.</div>
+  <input id="jobSearch" placeholder="Search by job, trade or postcode" oninput="filterOpenJobs()">
+  <div id="findWorkResults"></div>
+</section>
+<section class="card hidden" id="postjob">
+  <div class="page-heading"><div><h2>Post a job</h2><p>Tell tradespeople what you need doing.</p></div></div>
+  <p class="small">Posting a job is free. Add a clear description and the job postcode.</p>
+  <input id="newJobTitle" placeholder="What work do you need doing?">
+  <select id="newJobTrade"><option>Plumbing</option><option>Electrical</option><option>Heating</option><option>Roofing</option><option>Carpentry</option><option>Painting and decorating</option><option>Handyman</option><option>Other</option></select>
+  <textarea id="newJobDescription" rows="4" placeholder="Describe the work, any problems and when you need it done"></textarea>
+  <input id="newJobPostcode" placeholder="Job postcode">
+  <label class="small" for="newJobPhotos">Add job photos (up to 5 images, 10 MB each)</label>
+  <input id="newJobPhotos" type="file" accept="image/jpeg,image/png,image/webp" multiple>
+  <button class="gold" onclick="submitNewJob()">Publish job</button>
+</section>
+<section class="card hidden" id="jobs">
+  <div class="page-heading"><div><h2>My jobs</h2><p>Track the jobs you've posted.</p></div><button class="gold" style="width:auto" onclick="navigate('postjob')">＋ New job</button></div>
+  <div id="jobsPageList"></div>
+</section>
+<section class="card hidden" id="messages">
+  <div class="page-heading"><div><h2>Messages</h2><p>Keep conversations about your jobs together.</p></div></div>
+  <div id="conversationList" aria-live="polite"><p class="small">Loading your conversations…</p></div>
+  <div id="conversationPanel" class="hidden">
+    <div class="item"><strong id="conversationTitle">Conversation</strong><p id="conversationSubtitle"></p></div>
+    <div id="conversationMessages" aria-live="polite"></div>
+    <label for="messageDraft" class="small">Your message</label>
+    <textarea id="messageDraft" rows="3" maxlength="5000" placeholder="Write a message…"></textarea>
+    <button class="gold" onclick="sendConversationMessage()">Send message</button>
+    <button class="secondary" onclick="closeConversation()">Back to conversations</button>
+  </div>
+</section>
+<section class="card hidden" id="profile">
+  <div class="page-heading"><div><h2>My profile</h2><p>Your JK TRADES account details.</p></div></div>
+  <div id="profileDetails"></div>
+</section>
+<section class="card hidden" id="settings">
+  <div class="page-heading"><div><h2>Settings</h2><p>Account and sign-in preferences.</p></div></div>
+  <div class="item"><strong>Account email</strong><p id="settingsEmail"></p></div>
+  <div class="item"><strong>Security</strong><p>Use a long, unique password of at least 12 characters. This app-side rule helps discourage weak passwords, but it does not check passwords against known data breaches. Supabase’s built-in leaked-password protection still needs to be enabled in the project Auth settings when available.</p></div>
+  <button class="secondary" onclick="logout()">Log out of JK TRADES</button>
+</section>
 <section class="card hidden" id="account">
 <h2 id="accountTitle">Your account</h2>
 <p id="accountInfo"></p>
@@ -95,15 +249,18 @@ button.secondary{background:#e8edf5;color:var(--navy)}
 </section>
 
 <section class="card hidden" id="trades">
-<h2>Tradesperson application</h2>
+<div class="page-heading"><div><h2>Tradesperson area</h2><p>Your application and access to available work.</p></div></div>
+<div id="tradeApplicationStatus" class="notice" aria-live="polite">Checking your application…</div>
+<div id="tradeApplicationForm">
+<h3>Apply to join JK TRADES</h3>
 <input id="businessName" placeholder="Business name">
 <input id="tradeName" placeholder="Your trade">
 <input id="tradePostcode" placeholder="Your postcode">
 <input id="tradePhone" placeholder="Contact telephone">
 <button class="gold" onclick="applyTrade()">Submit application</button>
-<p class="small">Applications must be approved by JK TRADES before you can access open jobs.</p>
-<h2>Available jobs</h2>
-<div id="openJobs"></div>
+<p class="small">Applications are reviewed by JK TRADES. You can browse available jobs once approved.</p>
+</div>
+<div id="approvedJobsPanel" class="hidden"><h3>Available jobs</h3><div id="openJobs"></div></div>
 </section>
 
 <section class="card hidden" id="admin">
@@ -114,7 +271,17 @@ button.secondary{background:#e8edf5;color:var(--navy)}
 <h3>Customer jobs</h3>
 <div id="allJobs"></div>
 </section>
-<p id="message" role="status"></p>
+<p id="message" role="status" aria-live="polite"></p>
+</div>
+</div>
+<nav class="mobile-nav hidden" id="mobileNav" aria-label="Main navigation">
+  <button class="nav-link active" data-page="home" onclick="navigate('home')"><span class="nav-icon">⌂</span>Home</button>
+  <button class="nav-link" data-page="findwork" onclick="navigate('findwork')"><span class="nav-icon">⌕</span>Find work</button>
+  <button class="nav-link" data-page="postjob" onclick="navigate('postjob')"><span class="nav-icon">＋</span>Post job</button>
+  <button class="nav-link" data-page="messages" onclick="navigate('messages')"><span class="nav-icon">✉</span>Messages</button>
+  <button class="nav-link" data-page="profile" onclick="navigate('profile')"><span class="nav-icon">◉</span>Profile</button>
+  <button class="nav-link" data-page="trades" onclick="navigate('trades')"><span class="nav-icon">⚒</span>Trade</button>
+</nav>
 </main>
 <script>
 const SUPABASE_URL = "https://zrloxobjeetxtjpevthc.supabase.co";
@@ -122,31 +289,317 @@ const SUPABASE_KEY = "sb_publishable_OvPRFg4iqg39SMWlNnGmVg_kyP0zh3j";
 const db = window.supabase.createClient(SUPABASE_URL,SUPABASE_KEY);
 let currentUser = null;
 let currentDashboard = null;
+let currentTradeStatus = null;
+let openJobCache = [];
+let currentPage = "home";
+let currentConversationId = null;
+let currentConversationJobId = null;
 
 function msg(t){document.getElementById("message").textContent=t}
-function show(id){
-  ["welcome","register","login","account","customer","trades","admin"]
-    .forEach(x=>document.getElementById(x).classList.add("hidden"));
-  document.getElementById(id).classList.remove("hidden");
-  if(["customer","trades","admin"].includes(id)) currentDashboard=id;
+const pages=["home","findwork","postjob","jobs","messages","profile","settings","customer","trades","admin","account","welcome","register","login"];
+function updateNavigationForRole(){
+  const allowed={
+    customer:new Set(["home","postjob","jobs","messages","profile","trades","settings"]),
+    trades:new Set(["home","findwork","messages","profile","trades","settings"]),
+    admin:new Set()
+  };
+  document.querySelectorAll("[data-page]").forEach(el=>{
+    let visible=!!currentUser && !!allowed[currentDashboard]?.has(el.dataset.page);
+    if(currentDashboard==="trades" && el.dataset.page==="findwork") visible=currentTradeStatus==="approved";
+    el.classList.toggle("hidden",!visible);
+  });
+  document.getElementById("sideNav").classList.toggle("hidden",!currentUser || currentDashboard==="admin");
+  document.getElementById("mobileNav").classList.toggle("hidden",!currentUser || currentDashboard==="admin");
   document.getElementById("sessionNav").classList.toggle("hidden",!currentUser);
+}
+function navigate(page){
+  if(currentUser && currentDashboard==="customer" && page==="findwork"){
+    msg("Find work is available to approved tradespeople. You can apply from Trade application.");
+    page="home";
+  }
+  if(currentUser && currentDashboard==="trades" && (page==="postjob" || page==="jobs")){
+    msg("Posting and managing customer jobs is available from a customer account.");
+    page="trades";
+  }
+  if(currentUser && currentDashboard==="trades" && page==="findwork" && currentTradeStatus!=="approved"){
+    msg("Available work will unlock once your tradesperson application is approved.");
+    page="trades";
+  }
+  if(currentUser && currentDashboard==="admin" && page!=="admin") page="admin";
+  currentPage=page;
+  pages.forEach(id=>{const el=document.getElementById(id);if(el)el.classList.toggle("hidden",id!==page)});
+  document.querySelectorAll("[data-page]").forEach(el=>el.classList.toggle("active",el.dataset.page===page));
+  updateNavigationForRole();
+  if(page==="jobs") loadMyJobsPage();
+  if(page==="messages") loadMessagesPage();
+  if(page==="findwork") loadFindWork();
+  if(page==="profile") loadProfile();
+  if(page==="trades" && currentUser) loadTradePage();
+  if(page==="settings") document.getElementById("settingsEmail").textContent=currentUser?.email||"";
+}
+async function appendJobPhotoGallery(card,jobId){
+ const {data:photos,error}=await db.from("job_photos")
+  .select("id,storage_path,caption,created_at").eq("job_id",jobId).order("created_at",{ascending:true});
+ if(error||!photos?.length)return;
+ const gallery=document.createElement("div");gallery.className="job-photo-gallery";
+ for(const photo of photos){
+  const {data:signed,error:signedError}=await db.storage.from("job-photos").createSignedUrl(photo.storage_path,3600);
+  if(signedError||!signed?.signedUrl)continue;
+  const figure=document.createElement("figure");
+  const link=document.createElement("a");link.href=signed.signedUrl;link.target="_blank";link.rel="noopener noreferrer";link.setAttribute("aria-label","Open job photo");
+  const image=document.createElement("img");image.src=signed.signedUrl;image.alt=photo.caption||"Job photo";image.loading="lazy";image.decoding="async";
+  link.append(image);figure.append(link);
+  if(photo.caption){const caption=document.createElement("figcaption");caption.textContent=photo.caption;figure.append(caption)}
+  gallery.append(figure);
+ }
+ if(gallery.childElementCount){
+  const heading=document.createElement("h3");heading.textContent="Job photos ("+gallery.childElementCount+")";
+  card.append(heading,gallery);
+ }
+}
+function filterOpenJobs(){
+ const q=(document.getElementById("jobSearch").value||"").trim().toLowerCase();
+ const results=openJobCache.filter(j=>[j.title,j.trade,j.postcode,j.description].some(v=>(v||"").toLowerCase().includes(q)));
+ renderJobList("findWorkResults",results);
+}
+function renderJobList(target,rows){
+ const el=document.getElementById(target);el.innerHTML="";
+ if(!rows.length){el.innerHTML='<div class="item">No jobs found yet. Check back soon.</div>';return}
+ rows.forEach(j=>{
+  const card=makeItem(j.title,(j.trade||"Trade")+" · "+(j.postcode||"Location not provided")+" · "+(j.status||"open"));
+  const desc=document.createElement("p");desc.textContent=j.description||"";card.append(desc);
+  void appendJobPhotoGallery(card,j.id);
+  if(target==="findWorkResults" && currentDashboard==="trades" && currentTradeStatus==="approved"){
+   const form=document.createElement("div");form.className="quote-form";
+   const amount=document.createElement("input");amount.type="number";amount.min="0.01";amount.step="0.01";amount.placeholder="Your quote amount (£)";amount.id="quote-amount-"+j.id;
+   const message=document.createElement("textarea");message.rows=2;message.maxLength=2000;message.placeholder="Add a short message with what's included";message.id="quote-message-"+j.id;
+   const send=document.createElement("button");send.className="gold";send.textContent="Send quote";send.onclick=()=>sendJobQuote(j.id);
+   form.append(amount,message,send);card.append(form);
+  }
+  el.append(card);
+ });
+}
+async function sendJobQuote(jobId){
+ const amountInput=document.getElementById("quote-amount-"+jobId);
+ const messageInput=document.getElementById("quote-message-"+jobId);
+ const pounds=Number(amountInput?.value);
+ if(!Number.isFinite(pounds)||pounds<=0){msg("Enter a quote amount greater than £0.");return}
+ const amountPence=Math.round(pounds*100);
+ const {error}=await db.from("quotes").insert({
+  job_id:jobId,tradesperson_id:currentUser.id,amount_pence:amountPence,
+  message:(messageInput?.value||"").trim()||null,status:"sent"
+ });
+ if(error){msg(error.message);return}
+ msg("Your quote has been sent to the customer.");
+ amountInput.value="";messageInput.value="";
+}
+async function loadFindWork(){
+ const {data,error}=await db.from("jobs").select("*").eq("status","open").order("created_at",{ascending:false});
+ if(error){document.getElementById("findWorkResults").textContent=error.message;return}
+ openJobCache=data||[];filterOpenJobs();
+}
+async function loadMyJobsPage(){
+ const {data,error}=await db.from("jobs").select("*").eq("customer_id",currentUser.id).order("created_at",{ascending:false});
+ if(error){document.getElementById("jobsPageList").textContent=error.message;return}
+ const jobs=data||[];
+ document.getElementById("statJobs").textContent=jobs.length;
+ const host=document.getElementById("jobsPageList");host.innerHTML="";
+ if(!jobs.length){host.append(makeItem("No jobs posted yet","Your jobs will appear here once you publish one."));return}
+ const ids=jobs.map(j=>j.id);
+ const {data:quotes,error:quoteError}=await db.from("quotes").select("id,job_id,tradesperson_id,amount_pence,message,status,created_at").in("job_id",ids).order("created_at",{ascending:false});
+ if(quoteError){
+  host.append(makeItem("Your jobs", "Jobs are loaded, but quotes could not be retrieved. If the marketplace migration has not been applied yet, quote features will become available after setup."));
+  renderCustomerJobCards(host,jobs,[]);
+  return;
+ }
+ renderCustomerJobCards(host,jobs,quotes||[]);
+}
+function renderCustomerJobCards(host,jobs,quotes){
+ jobs.forEach(job=>{
+  const card=makeItem(job.title,(job.trade||"Trade")+" · "+(job.postcode||"Location not provided")+" · "+(job.status||"open"));
+  const desc=document.createElement("p");desc.textContent=job.description||"";card.append(desc);
+  void appendJobPhotoGallery(card,job.id);
+  const jobQuotes=quotes.filter(q=>q.job_id===job.id);
+  const heading=document.createElement("h3");heading.textContent="Quotes received ("+jobQuotes.length+")";card.append(heading);
+  if(!jobQuotes.length){const empty=document.createElement("p");empty.textContent="No quotes yet. Approved tradespeople can send offers for this job.";card.append(empty)}
+  jobQuotes.forEach(q=>{
+   const quote=document.createElement("div");quote.className="item";
+   const amount=document.createElement("strong");amount.textContent=new Intl.NumberFormat("en-GB",{style:"currency",currency:"GBP"}).format(q.amount_pence/100);
+   const detail=document.createElement("p");detail.textContent=(q.message||"No message provided")+" · "+q.status;
+   quote.append(amount,detail);
+   if(q.status==="sent" && job.status==="open"){
+    const accept=document.createElement("button");accept.className="gold";accept.textContent="Accept this quote";accept.onclick=()=>acceptJobQuote(q.id);
+    quote.append(accept);
+   }
+   card.append(quote);
+  });
+  host.append(card);
+ });
+}
+async function acceptJobQuote(quoteId){
+ if(!confirm("Accept this quote? Other pending quotes for the same job will be declined."))return;
+ const {data:quote,error:quoteError}=await db.from("quotes").select("job_id,tradesperson_id").eq("id",quoteId).single();
+ if(quoteError){msg(quoteError.message);return}
+ const {error}=await db.rpc("accept_job_quote",{p_quote_id:quoteId});
+ if(error){msg(error.message);return}
+ msg("Quote accepted. Setting up your private conversation…");
+ const {data:existing,error:findError}=await db.from("conversations").select("id").eq("job_id",quote.job_id).eq("customer_id",currentUser.id).eq("tradesperson_id",quote.tradesperson_id).maybeSingle();
+ if(findError){msg("Quote accepted, but the conversation could not be loaded: "+findError.message);await loadMyJobsPage();return}
+ let conversation=existing;
+ if(!conversation){
+  const {data:created,error:createError}=await db.from("conversations").insert({job_id:quote.job_id,customer_id:currentUser.id,tradesperson_id:quote.tradesperson_id}).select("id").single();
+  if(createError){msg("Quote accepted, but conversation setup failed: "+createError.message);await loadMyJobsPage();return}
+  conversation=created;
+ }
+ await loadMyJobsPage();
+ await openConversation(conversation.id,quote.job_id);
+}
+async function loadMessagesPage(){
+ const host=document.getElementById("conversationList");
+ const panel=document.getElementById("conversationPanel");
+ panel.classList.add("hidden");host.classList.remove("hidden");host.textContent="Loading conversations…";
+ const column=currentDashboard==="trades"?"tradesperson_id":"customer_id";
+ const {data:conversations,error}=await db.from("conversations").select("id,job_id,customer_id,tradesperson_id,created_at").eq(column,currentUser.id).order("created_at",{ascending:false});
+ if(error){host.textContent="Couldn't load messages. If the marketplace database setup hasn't been applied yet, conversations will appear after setup. "+error.message;return}
+ host.innerHTML="";
+ if(!conversations?.length){host.textContent="No conversations yet. When a customer accepts a quote, the private job conversation will appear here.";return}
+ const jobIds=[...new Set(conversations.map(c=>c.job_id))];
+ const {data:jobs, error:jobsError}=await db.from("jobs").select("id,title,trade,postcode").in("id",jobIds);
+ const jobMap=new Map((jobs||[]).map(j=>[j.id,j]));
+ conversations.forEach(c=>{
+  const job=jobMap.get(c.job_id);
+  const card=makeItem(job?.title||"Job conversation",(job?.trade||"Job")+" · "+(job?.postcode||""));
+  const open=document.createElement("button");open.className="gold";open.textContent="Open messages";open.onclick=()=>openConversation(c.id,c.job_id);
+  card.append(open);host.append(card);
+ });
+ if(jobsError){const note=document.createElement("p");note.className="small";note.textContent="Some job details could not be loaded.";host.prepend(note)}
+}
+async function openConversation(conversationId,jobId){
+ currentConversationId=conversationId;currentConversationJobId=jobId;
+ const host=document.getElementById("conversationList"),panel=document.getElementById("conversationPanel");
+ host.classList.add("hidden");panel.classList.remove("hidden");
+ document.getElementById("conversationTitle").textContent="Job conversation";
+ const {data:job}=await db.from("jobs").select("title,trade,postcode").eq("id",jobId).maybeSingle();
+ document.getElementById("conversationSubtitle").textContent=job?[job.title,job.trade,job.postcode].filter(Boolean).join(" · "):"Private conversation about your job";
+ await loadConversationMessages();
+}
+async function loadConversationMessages(){
+ const host=document.getElementById("conversationMessages");host.innerHTML="Loading messages…";
+ const {data:rows,error}=await db.from("messages").select("id,sender_id,body,read_at,created_at").eq("conversation_id",currentConversationId).order("created_at",{ascending:true});
+ if(error){host.textContent="Couldn't load messages: "+error.message;return}
+ host.innerHTML="";
+ if(!rows?.length){const empty=document.createElement("p");empty.className="small";empty.textContent="No messages yet. Send the first message to get things started.";host.append(empty)}
+ for(const row of rows||[]){
+  const item=document.createElement("div");item.className="item";
+  const who=document.createElement("strong");who.textContent=row.sender_id===currentUser.id?"You":"Other participant";
+  const body=document.createElement("p");body.textContent=row.body;
+  const time=document.createElement("p");time.className="small";time.textContent=new Date(row.created_at).toLocaleString("en-GB");
+  item.append(who,body,time);host.append(item);
+  if(row.sender_id!==currentUser.id&&!row.read_at){
+   const {error:readError}=await db.rpc("mark_conversation_message_read",{p_message_id:row.id});
+   if(readError) console.warn("Message read receipt was not updated:",readError.message);
+  }
+ }
+ host.scrollTop=host.scrollHeight;
+}
+async function sendConversationMessage(){
+ const input=document.getElementById("messageDraft"),body=input.value.trim();
+ if(!body){msg("Write a message before sending.");return}
+ if(!currentConversationId){msg("Open a conversation first.");return}
+ const {error}=await db.from("messages").insert({conversation_id:currentConversationId,sender_id:currentUser.id,body});
+ if(error){msg(error.message);return}
+ input.value="";msg("Message sent.");await loadConversationMessages();
+}
+function closeConversation(){
+ currentConversationId=null;currentConversationJobId=null;
+ document.getElementById("conversationPanel").classList.add("hidden");
+ document.getElementById("conversationList").classList.remove("hidden");
+ void loadMessagesPage();
+}
+async function submitNewJob(){
+ const title=document.getElementById("newJobTitle").value.trim();
+ const trade=document.getElementById("newJobTrade").value;
+ const description=document.getElementById("newJobDescription").value.trim();
+ const postcode=document.getElementById("newJobPostcode").value.trim();
+ const photoInput=document.getElementById("newJobPhotos");
+ const photos=Array.from(photoInput.files||[]);
+ const allowedTypes=["image/jpeg","image/png","image/webp"];
+ if(!currentUser){msg("Please sign in before posting a job.");return}
+ if(!title||!description||!postcode){msg("Please add a job title, description and postcode.");return}
+ if(photos.length>5){msg("Please choose no more than 5 photos.");return}
+ if(photos.some(file=>!allowedTypes.includes(file.type)||file.size>10485760)){
+   msg("Photos must be JPG, PNG or WebP and no larger than 10 MB each.");return;
+ }
+ const {data:job,error}=await db.from("jobs")
+   .insert({customer_id:currentUser.id,title,description,trade,postcode})
+   .select("id").single();
+ if(error){msg(error.message);return}
+ if(photos.length){
+   const uploadedPaths=[];
+   for(const file of photos){
+     const extension=file.type==="image/jpeg"?"jpg":file.type==="image/png"?"png":"webp";
+     const path=job.id+"/"+currentUser.id+"/"+crypto.randomUUID()+"."+extension;
+     const {error:uploadError}=await db.storage.from("job-photos").upload(path,file,{contentType:file.type,upsert:false});
+     if(uploadError){
+       if(uploadedPaths.length) await db.storage.from("job-photos").remove(uploadedPaths);
+       msg("Your job was published, but a photo could not be uploaded: "+uploadError.message);
+       await loadMyJobsPage();navigate("jobs");return;
+     }
+     uploadedPaths.push(path);
+   }
+   const photoRows=uploadedPaths.map((storage_path,index)=>({
+     job_id:job.id,customer_id:currentUser.id,storage_path,
+     caption:photos[index]?.name||null
+   }));
+   const {error:photoError}=await db.from("job_photos").insert(photoRows);
+   if(photoError){
+     await db.storage.from("job-photos").remove(uploadedPaths);
+     msg("Your job was published, but the photo details could not be saved: "+photoError.message);
+     await loadMyJobsPage();navigate("jobs");return;
+   }
+ }
+ ["newJobTitle","newJobDescription","newJobPostcode"].forEach(id=>document.getElementById(id).value="");
+ photoInput.value="";
+ msg(photos.length?"Your job and photos have been published.":"Your job has been published.");
+ await loadMyJobsPage();navigate("jobs");
+}
+async function loadProfile(){
+ const name=currentUser.user_metadata?.full_name||"JK TRADES member";
+ const role=currentDashboard==="trades"?"Tradesperson":currentDashboard==="admin"?"Administrator":"Customer";
+ const rows=[["Name",name],["Email",currentUser.email||""],["Account type",role],["Member since",new Date(currentUser.created_at).toLocaleDateString("en-GB")]];
+ document.getElementById("profileDetails").innerHTML=rows.map(([k,v])=>'<div class="item"><strong>'+k+'</strong><p>'+escapeText(v)+'</p></div>').join("");
+}
+function escapeText(value){return String(value??"").replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]))}
+
+function show(id){
+  if(["customer","trades","admin"].includes(id)) currentDashboard=id;
+  navigate(id);
 }
 async function goToDashboard(){
   if(!currentUser || !currentDashboard) return;
-  const destination=currentDashboard;
-  show(destination);
-  if(destination==="customer") await loadMyJobs();
-  if(destination==="trades") await loadOpenJobs();
-  if(destination==="admin") await loadAdmin();
+  if(currentDashboard==="admin"){show("admin");await loadAdmin();return}
+  navigate("home");
 }
 async function register(){
 const name=regName.value.trim(),email=regEmail.value.trim(),
 password=regPassword.value,type=regType.value;
 if(!name||!email||!password){msg("Please complete all fields.");return}
-const {error}=await db.auth.signUp({
-email,password,options:{data:{full_name:name,account_type:type}}
+if(name.length>100 || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)){
+ msg("Enter a valid name and email address.");return;
+}
+if([...password].length<12){
+ msg("Use a password with at least 12 characters.");return;
+}
+if(!["customer","tradesperson"].includes(type)){
+ msg("Choose a valid account type.");return;
+}
+const {data,error}=await db.auth.signUp({
+ email,password,options:{data:{full_name:name,account_type:type}}
 });
-msg(error?error.message:"Registration submitted. Check your email to confirm your account.");
+if(error){msg(error.message);return}
+msg(data.session
+ ? "Your account has been created. You can now continue."
+ : "Registration submitted. Check your email to confirm your account before logging in.");
 }
 async function login(){
 const {error}=await db.auth.signInWithPassword({
@@ -159,8 +612,8 @@ async function logout(){
   if(error){msg(error.message);return}
   currentUser=null;
   currentDashboard=null;
-  document.getElementById("sessionNav").classList.add("hidden");
-  show("welcome");
+  currentTradeStatus=null;
+  navigate("welcome");
   msg("You have logged out.");
 }
 async function loadAccount(user){
@@ -176,14 +629,13 @@ const {data:app}=await db.from("trade_applications").select("status").eq("user_i
 const type=user.user_metadata?.account_type;
 if(app || type==="tradesperson"){
   currentDashboard="trades";
-  show("trades");
   msg(app?"Your application status: "+app.status:"Complete your tradesperson application below.");
-  await loadOpenJobs();
-}else{
-  currentDashboard="customer";
-  show("customer");
-  await loadMyJobs();
+  navigate("trades");
+  return;
 }
+currentDashboard="customer";
+await loadMyJobs();
+navigate("home");
 }
 async function postJob(){
 if(!currentUser)return;
@@ -204,13 +656,61 @@ if(error){myJobs.textContent=error.message;return}
 (data||[]).forEach(j=>myJobs.append(makeItem(j.title,j.trade+" · "+j.postcode+" · "+j.status)));
 }
 async function applyTrade(){
+if(!currentUser){msg("Please sign in before applying.");return}
+const business=businessName.value.trim();
+const trade=tradeName.value.trim();
+const postcode=tradePostcode.value.trim();
+const phone=tradePhone.value.trim();
+if(!business||!trade||!postcode||!phone){
+ msg("Complete your business name, trade, postcode and telephone number.");return;
+}
+if(business.length>120||trade.length>80||postcode.length>12||phone.length>30){
+ msg("Please check the length of your application details.");return;
+}
+const {data:existing,error:lookupError}=await db.from("trade_applications")
+ .select("id,status").eq("user_id",currentUser.id).maybeSingle();
+if(lookupError){msg("We couldn't check your existing application: "+lookupError.message);return}
+if(existing){
+ msg("You have already submitted an application. Current status: "+existing.status+".");
+ await loadTradePage();return;
+}
 const {error}=await db.from("trade_applications").insert({
-user_id:currentUser.id,business_name:businessName.value.trim(),
-trade:tradeName.value.trim(),postcode:tradePostcode.value.trim(),
-phone:tradePhone.value.trim(),status:"pending"
+ user_id:currentUser.id,business_name:business,trade,postcode,phone
 });
-msg(error?error.message:"Application submitted. It is awaiting admin approval.");
-if(!error)await loadAccount(currentUser);
+if(error){
+ msg(error.code==="23505"
+  ? "You already have an application awaiting review."
+  : "Your application couldn't be submitted: "+error.message);
+ return;
+}
+msg("Application submitted. It is awaiting admin approval.");
+await loadTradePage();
+}
+async function loadTradePage(){
+ const statusBox=document.getElementById("tradeApplicationStatus");
+ const form=document.getElementById("tradeApplicationForm");
+ const jobsPanel=document.getElementById("approvedJobsPanel");
+ statusBox.textContent="Checking your application…";
+ form.classList.add("hidden");
+ jobsPanel.classList.add("hidden");
+ const {data:app,error}=await db.from("trade_applications").select("status,business_name,trade").eq("user_id",currentUser.id).maybeSingle();
+ if(error){currentTradeStatus=null;updateNavigationForRole();statusBox.textContent="We couldn't check your application: "+error.message;return}
+ currentTradeStatus=app?.status||null;
+ updateNavigationForRole();
+ if(!app){
+   statusBox.textContent="You haven't applied to become a tradesperson yet. Complete the short form below to apply.";
+   form.classList.remove("hidden");
+   return;
+ }
+ if(app.status==="approved"){
+   statusBox.textContent="Your tradesperson application is approved. Available jobs are shown below.";
+   jobsPanel.classList.remove("hidden");
+   await loadOpenJobs();
+ }else if(app.status==="rejected"){
+   statusBox.textContent="Your application was not approved. Please contact JK TRADES if you believe this is incorrect.";
+ }else{
+   statusBox.textContent="Your application for "+(app.business_name||"your business")+" is awaiting review. We'll show available jobs here once it has been approved.";
+ }
 }
 async function loadOpenJobs(){
 const {data,error}=await db.from("jobs").select("*").eq("status","open").order("created_at",{ascending:false});
@@ -253,7 +753,8 @@ db.auth.onAuthStateChange((event,session)=>{
   if(event==="SIGNED_OUT"){
     currentUser=null;
     currentDashboard=null;
-    document.getElementById("sessionNav").classList.add("hidden");
+    currentTradeStatus=null;
+    updateNavigationForRole();
   }
 });
 (async()=>{
